@@ -1,0 +1,10 @@
+IMPORTANT: You must update your environment variables on Vercel to fix the database connection error.
+
+1. Go to your Vercel Dashboard > Settings > Environment Variables.
+2. Find the key: DATABASE_URL
+3. Update its value to the PUBLIC Railway URL (starting with shortline.proxy.rlwy.net):
+
+postgresql://postgres:HdWnAwGzYoHVQOrqcPEWVEAhgbchPXGY@shortline.proxy.rlwy.net:48814/railway
+
+WHY THIS FIXES IT:
+The error "Can't reach database server at postgres.railway.internal" means Vercel is trying to use the internal Railway network address. Vercel is hosted externally, so it MUST use the Public Proxy URL to reach your database.

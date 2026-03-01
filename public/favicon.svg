@@ -1,0 +1,16 @@
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="50" cy="50" r="40" fill="url(#logo_glow)" fillOpacity="0.2" />
+  <path d="M30 20L50 45L70 20M30 80L50 55L70 80" stroke="url(#logo_gradient)" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round" />
+  <circle cx="50" cy="50" r="8" fill="white" />
+  <path d="M50 20V35M50 65V80M30 50H40M60 50H70" stroke="white" strokeWidth="4" strokeLinecap="round" opacity="0.5" />
+  <defs>
+    <linearGradient id="logo_gradient" x1="20" y1="20" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3B82F6" />
+      <stop offset="1" stop-color="#1D4ED8" />
+    </linearGradient>
+    <radialGradient id="logo_glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(50 50) rotate(90) scale(40)">
+      <stop stop-color="#3B82F6" />
+      <stop offset="1" stop-color="#3B82F6" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+</svg>

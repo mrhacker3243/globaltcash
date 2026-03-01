@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String       @id @default(cuid())
+  email         String       @unique
+  password      String
+  role          Role         @default(USER)
+  balance       Float        @default(0.0)
+  createdAt     DateTime     @default(now())
+  name          String?
+  walletAddress String?
+  twoFactorSecret String?
+  isTwoFactorEnabled Boolean @default(false)
+  deposits      Deposit[]
+  withdrawals   Withdrawal[]
+  referrerId    String?
+  referrer      User?    @relation("UserReferrals", fields: [referrerId], references: [id])
+  referredUsers User[]   @relation("UserReferrals")
+}
+
+model SystemSetting {
+  id                 String   @id @default("global")
+  adminWalletAddress String?  @default("0x742d35Cc6634C0532925a3b844Bc454e4438f44e")
+  tonWalletAddress   String?
+  jazzCashNumber     String?  @default("03001234567")
+  jazzCashName       String?  @default("Faham Khan")
+  easyPaisaNumber    String?  @default("03459876543")
+  easyPaisaName      String?  @default("Faham Khan")
+  maintenanceMode    Boolean  @default(false)
+  updatedAt          DateTime @default(now()) @updatedAt
+}
+
+model Deposit {
+  id              String   @id @default(cuid())
+  userId          String
+  amount          Float
+  gateway         String?  // "JazzCash", "EasyPaisa", "USDT"
+  planName        String?  @default("Manual Deposit")
+  transactionId   String?  @unique // User jo TID dalay ga (Manual)
+  transactionHash String?  @unique // User jo hash dalay ga (Crypto/Plan)
+  slipImage       String?  // Base64 or URL of the cash slip image
+  status          DepositStatus @default(PENDING)
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id])
+}
+
+model Withdrawal {
+  id        String   @id @default(cuid())
+  amount    Float
+  address   String
+  status    Status   @default(PENDING)
+  userId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Status {
+  PENDING
+  COMPLETED
+  REJECTED
+  ACTIVE
+}
+
+enum DepositStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ACTIVE
+}
+
+model Plan {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  minAmount   Float
+  maxAmount   Float
+  roi         Float    // Percentage value (e.g., 2.5 for 2.5%)
+  duration    String   // e.g., "24 Hours"
+  icon        String?  @default("Zap")
+  popular     Boolean  @default(false)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
