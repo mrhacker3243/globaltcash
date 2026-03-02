@@ -25,7 +25,7 @@ export default function CopyButton({ text, label = "Copy Link", className = "" }
   return (
     <button 
       onClick={handleCopy}
-      className={`bg-purple-600 hover:bg-purple-500 text-white px-3 sm:px-6 py-3 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg flex items-center justify-center gap-2 ${className}`}
+      className={`bg-[#22c55e] hover:bg-[#16a34a] text-black px-3 sm:px-6 py-3 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-[#22c55e]/30 flex items-center justify-center gap-2 ${className}`}
     >
       {copied ? (
         <>Copied! <Check size={14} /></>

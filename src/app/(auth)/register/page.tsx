@@ -64,7 +64,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#020617] flex items-center justify-center p-4">
       <div className="w-full max-w-[400px] space-y-6 py-8">
         {/* Logo & Info */}
         <div className="text-center space-y-4">
@@ -76,17 +76,17 @@ export default function RegisterPage() {
 
         {/* Dynamic Error Box */}
         {error && (
-          <div className="bg-red-50 border border-red-100 text-red-500 text-[10px] font-bold p-4 rounded-xl text-center uppercase tracking-widest">
+          <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-[10px] font-bold p-4 rounded-xl text-center uppercase tracking-widest">
             ⚠️ {error}
           </div>
         )}
 
-        <div className="bg-white border border-slate-200 p-6 md:p-8 rounded-[2.5rem] shadow-xl shadow-slate-200/50">
+        <div className="bg-[#0f172a] border border-[#22c55e]/20 p-6 md:p-8 rounded-[2.5rem] shadow-xl shadow-[#22c55e]/5">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1">
               <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Full Name</label>
               <div className="relative group">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-purple-600 transition" size={18} />
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#22c55e] transition" size={18} />
                 <input 
                   type="text" 
                   required
@@ -94,7 +94,7 @@ export default function RegisterPage() {
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                   placeholder="Enter your full name"
                   autoComplete="name"
-                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-sm text-slate-900 focus:outline-none focus:border-purple-600 transition-all placeholder:text-slate-200"
+                  className="w-full bg-[#1e293b] border border-[#22c55e]/20 rounded-2xl py-4 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-[#22c55e]/50 focus:shadow-[0_0_15px_rgba(34,197,94,0.2)] transition-all placeholder:text-slate-500"
                 />
               </div>
             </div>
@@ -102,7 +102,7 @@ export default function RegisterPage() {
             <div className="space-y-1">
               <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Email Address</label>
               <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-purple-600 transition" size={18} />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#22c55e] transition" size={18} />
                 <input 
                   type="email" 
                   required
@@ -110,7 +110,7 @@ export default function RegisterPage() {
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                   placeholder="your.email@example.com"
                   autoComplete="email"
-                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-sm text-slate-900 focus:outline-none focus:border-purple-600 transition-all placeholder:text-slate-200"
+                  className="w-full bg-[#1e293b] border border-[#22c55e]/20 rounded-2xl py-4 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-[#22c55e]/50 focus:shadow-[0_0_15px_rgba(34,197,94,0.2)] transition-all placeholder:text-slate-500"
                 />
               </div>
             </div>
@@ -118,7 +118,7 @@ export default function RegisterPage() {
             <div className="space-y-1">
               <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Set Password</label>
               <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-purple-600 transition" size={18} />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#22c55e] transition" size={18} />
                 <input 
                   type={showPassword ? "text" : "password"} 
                   required
@@ -126,12 +126,12 @@ export default function RegisterPage() {
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
                   placeholder="Create a strong password"
                   autoComplete="new-password"
-                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-12 text-sm text-slate-900 focus:outline-none focus:border-purple-600 transition-all placeholder:text-slate-200"
+                  className="w-full bg-[#1e293b] border border-[#22c55e]/20 rounded-2xl py-4 pl-12 pr-12 text-sm text-white focus:outline-none focus:border-[#22c55e]/50 focus:shadow-[0_0_15px_rgba(34,197,94,0.2)] transition-all placeholder:text-slate-500"
                 />
                 <button 
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-[#22c55e]"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -141,7 +141,7 @@ export default function RegisterPage() {
             <div className="space-y-1">
               <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Confirm Password</label>
               <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-purple-600 transition" size={18} />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#22c55e] transition" size={18} />
                 <input 
                   type="password" 
                   required
@@ -149,7 +149,7 @@ export default function RegisterPage() {
                   onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
                   placeholder="Confirm your password"
                   autoComplete="new-password"
-                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-sm text-slate-900 focus:outline-none focus:border-purple-600 transition-all placeholder:text-slate-200"
+                  className="w-full bg-[#1e293b] border border-[#22c55e]/20 rounded-2xl py-4 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-[#22c55e]/50 focus:shadow-[0_0_15px_rgba(34,197,94,0.2)] transition-all placeholder:text-slate-500"
                 />
               </div>
             </div>
@@ -157,7 +157,7 @@ export default function RegisterPage() {
             <button 
               disabled={loading}
               type="submit" 
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-4 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-purple-600/20 mt-4 disabled:opacity-50 uppercase text-[12px] tracking-widest"
+              className="w-full bg-[#22c55e] hover:bg-[#16a34a] text-black font-black py-4 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-[#22c55e]/30 mt-4 disabled:opacity-50 uppercase text-[12px] tracking-widest"
             >
               {loading ? <Loader2 className="animate-spin" size={20} /> : "Create Account"}
             </button>
@@ -166,9 +166,9 @@ export default function RegisterPage() {
 
         <div className="text-center space-y-4">
           <p className="text-slate-400 text-xs">
-            Already a member? <Link href="/login" className="text-purple-600 font-bold hover:underline italic">Login Here</Link>
+            Already a member? <Link href="/login" className="text-[#22c55e] font-bold hover:underline italic">Login Here</Link>
           </p>
-          <Link href="/" className="inline-block text-slate-400 hover:text-slate-600 text-[10px] font-black uppercase tracking-widest transition italic">
+          <Link href="/" className="inline-block text-slate-400 hover:text-[#22c55e] text-[10px] font-black uppercase tracking-widest transition italic">
             ← Back to Home
           </Link>
         </div>

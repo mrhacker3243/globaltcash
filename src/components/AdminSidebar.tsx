@@ -33,7 +33,7 @@ export default function AdminSidebar() {
         <div className="flex items-center gap-3">
            <button 
              onClick={() => setIsOpen(!isOpen)}
-             className="flex items-center gap-2 px-3 py-1.5 bg-purple-600/10 text-purple-400 rounded-lg border border-purple-500/20 active:scale-90 transition-all shadow-[0_0_15px_rgba(147,51,234,0.3)]"
+             className="flex items-center gap-2 px-3 py-1.5 bg-[#22c55e]/10 text-[#22c55e] rounded-lg border border-[#22c55e]/20 active:scale-90 transition-all shadow-[0_0_15px_rgba(34,197,94,0.3)]"
            >
               {isOpen ? <X size={16} /> : <Menu size={16} />}
               <span className="text-[10px] font-black uppercase tracking-tighter text-purple-200">Menu</span>

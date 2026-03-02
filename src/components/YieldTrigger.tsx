@@ -42,7 +42,7 @@ export default function YieldTrigger() {
   return (
     <div 
       onClick={handleCalculate}
-      className={`bg-purple-600 hover:bg-purple-700 px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-purple-600/20 active:scale-95 group ${loading ? 'opacity-50 pointer-events-none' : ''}`}
+      className={`bg-[#22c55e] hover:bg-[#16a34a] px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-[#22c55e]/30 active:scale-95 group text-black font-black ${loading ? 'opacity-50 pointer-events-none' : ''}`}
     >
       {loading ? (
         <Loader2 size={14} className="text-white animate-spin" />

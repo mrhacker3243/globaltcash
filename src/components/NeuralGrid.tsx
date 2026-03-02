@@ -25,7 +25,7 @@ export default function NeuralGrid() {
         <div 
           key={i} 
           className={`h-full rounded-[2px] transition-all duration-[2000ms] ${
-            Math.random() > 0.95 ? 'bg-purple-600 shadow-sm scale-110' : 
+            Math.random() > 0.95 ? 'bg-[#22c55e] shadow-sm scale-110' : 
             Math.random() > 0.8 ? 'bg-slate-200' : 'bg-slate-100'
           }`} 
         />

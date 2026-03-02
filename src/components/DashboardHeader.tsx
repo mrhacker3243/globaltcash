@@ -27,19 +27,19 @@ export default function DashboardHeader({ type = "user" }: { type?: "user" | "ad
     };
 
   return (
-    <header className="hidden lg:flex flex-col border-b border-slate-200 bg-white/80 backdrop-blur-xl sticky top-0 z-40">
+    <header className="hidden lg:flex flex-col border-b border-[#22c55e]/20 bg-[#0f172a]/80 backdrop-blur-xl sticky top-0 z-40">
       {/* Main Header Row */}
       <div className="flex items-center justify-between px-10 py-6">
         <div className="flex items-center gap-6">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <div className="h-6 w-1 rounded-full shadow-[0_0_10px_rgba(147,51,234,0.3)] bg-purple-600" />
+              <div className="h-6 w-1 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.3)] bg-[#22c55e]" />
               <h1 className="text-xl font-black uppercase tracking-tighter italic text-slate-900 leading-none">
                 {getPageTitle()}
               </h1>
             </div>
             <p className="text-slate-500 text-[8px] font-black uppercase tracking-[0.3em] ml-4 flex items-center gap-2">
-              <span className="w-1 h-1 rounded-full animate-pulse bg-purple-600" />
+              <span className="w-1 h-1 rounded-full animate-pulse bg-[#22c55e]" />
               {getPageSubtitle()}
             </p>
           </div>
