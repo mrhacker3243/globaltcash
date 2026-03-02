@@ -227,7 +227,7 @@ export default function DepositPage() {
                             </div>
                             <button 
                               onClick={() => handleCopy(selectedMethod.account || selectedMethod.address)}
-                              className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-purple-600 hover:text-white transition-all active:scale-90 shadow-sm"
+                              className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-[#22c55e] hover:text-white transition-all active:scale-90 shadow-sm"
                             >
                               <Copy size={18} />
                             </button>
@@ -318,12 +318,12 @@ export default function DepositPage() {
                   <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em] mb-4 italic">Payment Details</h4>
                   <div className="bg-slate-50 border border-slate-100 p-6 rounded-2xl flex justify-between items-center group/addr">
                     <div>
-                      <p className="text-xl font-mono text-purple-600 break-all leading-tight">{selectedMethod.account || selectedMethod.address}</p>
+                      <p className="text-xl font-mono text-[#22c55e] break-all leading-tight">{selectedMethod.account || selectedMethod.address}</p>
                       {selectedMethod.holder && <p className="text-[10px] font-black uppercase text-slate-500 mt-2">Account Name: {selectedMethod.holder}</p>}
                     </div>
                     <button 
                       onClick={() => handleCopy(selectedMethod.account || selectedMethod.address)}
-                      className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-purple-600 hover:text-white transition-all active:scale-90 shadow-sm"
+                      className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-[#22c55e] hover:text-white transition-all active:scale-90 shadow-sm"
                     >
                       <Copy size={18} />
                     </button>

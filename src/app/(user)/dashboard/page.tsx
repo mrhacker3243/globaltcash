@@ -173,12 +173,12 @@ export default async function UserDashboard() {
                     <div className="flex items-center gap-5">
                        <div className="relative">
                           {dep.gateway === 'JazzCash' && (
-                            <div className="w-10 h-10 flex items-center justify-center overflow-hidden rounded-xl bg-white p-1.5 shrink-0 border border-slate-100 group-hover:border-purple-200 transition-colors shadow-sm">
+                            <div className="w-10 h-10 flex items-center justify-center overflow-hidden rounded-xl bg-white p-1.5 shrink-0 border border-slate-100 group-hover:border-[#22c55e]/40 transition-colors shadow-sm">
                               <img src="https://crystalpng.com/wp-content/uploads/2024/12/new-Jazzcash-logo.png" alt="JazzCash" className="w-full h-full object-contain" />
                             </div>
                           )}
                           {dep.gateway === 'EasyPaisa' && (
-                            <div className="w-10 h-10 flex items-center justify-center overflow-hidden rounded-xl bg-white p-1.5 shrink-0 border border-slate-100 group-hover:border-purple-200 transition-colors shadow-sm">
+                            <div className="w-10 h-10 flex items-center justify-center overflow-hidden rounded-xl bg-white p-1.5 shrink-0 border border-slate-100 group-hover:border-[#22c55e]/40 transition-colors shadow-sm">
                               <img src="https://crystalpng.com/wp-content/uploads/2024/10/Easypaisa-logo.png" alt="EasyPaisa" className="w-full h-full object-contain" />
                             </div>
                           )}

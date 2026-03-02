@@ -62,7 +62,7 @@ export default function WithdrawPage() {
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <Loader2 className="animate-spin text-purple-600" size={40} />
+        <Loader2 className="animate-spin text-[#22c55e]" size={40} />
       </div>
     );
   }
@@ -71,9 +71,9 @@ export default function WithdrawPage() {
     <div className="p-4 md:p-8 pt-24 lg:pt-10 max-w-6xl mx-auto">
       <div className="mb-10 text-slate-900 lg:hidden">
         <div className="flex items-center gap-3 mb-2">
-          <div className="bg-purple-600 h-8 w-1.5 rounded-full shadow-[0_0_15px_rgba(147,51,234,0.3)]" />
+          <div className="bg-[#22c55e] h-8 w-1.5 rounded-full shadow-[0_0_15px_rgba(34,197,94,0.3)]" />
           <h1 className="text-3xl font-black uppercase tracking-tighter italic leading-none text-slate-900">
-            Withdraw <span className="text-purple-600">Funds</span>
+            Withdraw <span className="text-[#22c55e]">Funds</span>
           </h1>
         </div>
         <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.4em] ml-5">
@@ -84,7 +84,7 @@ export default function WithdrawPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white border border-slate-200 p-8 rounded-[2.5rem] shadow-sm relative overflow-hidden">
-            <div className="absolute -top-24 -right-24 w-64 h-64 bg-purple-600/5 rounded-full blur-[80px]" />
+            <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#22c55e]/5 rounded-full blur-[80px]" />
             
             <div className="flex items-center justify-between mb-10 relative z-10">
                <div className="flex items-center gap-4">
@@ -100,10 +100,10 @@ export default function WithdrawPage() {
                {tonAddress && (
                  <button 
                   onClick={fillConnectedWallet}
-                  className="bg-purple-50 hover:bg-purple-100 border border-purple-100 px-4 py-2 rounded-xl flex items-center gap-2 transition-all group"
+                  className="bg-[#22c55e]/50 hover:bg-[#22c55e]/100 border border-[#22c55e]/100 px-4 py-2 rounded-xl flex items-center gap-2 transition-all group"
                  >
-                    <Wallet size={14} className="text-purple-600" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-purple-600 group-hover:text-purple-700">Use TON Wallet</span>
+                    <Wallet size={14} className="text-[#22c55e]" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#22c55e] group-hover:text-[#16a34a]">Use TON Wallet</span>
                  </button>
                )}
             </div>
@@ -131,10 +131,10 @@ export default function WithdrawPage() {
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     placeholder="Paste 0x... or TON address"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-purple-600 transition-all font-mono text-slate-600"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-[#22c55e] transition-all font-mono text-slate-600"
                   />
                   {address === tonAddress && tonAddress && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2 text-purple-600">
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2 text-[#22c55e]">
                        <CheckCircle2 size={16} />
                        <span className="text-[8px] font-black uppercase">Telegram Link</span>
                     </div>

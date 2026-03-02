@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { usePlanSync } from "@/hooks/usePlanSync";
 
 const iconMap: Record<string, any> = {
-  Zap: <Zap className="text-purple-600" />,
+  Zap: <Zap className="text-[#22c55e]" />,
   Trophy: <Trophy className="text-yellow-600" />,
   Crown: <Crown className="text-indigo-600" />,
 };
@@ -119,9 +119,9 @@ export default function PlansPage() {
       {/* Page Header - Hidden on Desktop */}
       <div className="mb-10 text-slate-900 lg:hidden">
         <div className="flex items-center gap-3 mb-2">
-          <div className="bg-purple-600 h-8 w-1.5 rounded-full shadow-[0_0_15px_rgba(147,51,234,0.3)]" />
+          <div className="bg-[#22c55e] h-8 w-1.5 rounded-full shadow-[0_0_15px_rgba(34,197,94,0.3)]" />
           <h1 className="text-3xl font-black uppercase tracking-tighter italic text-slate-900 leading-none">
-            Investment <span className="text-purple-600">Plans</span>
+            Investment <span className="text-[#22c55e]">Plans</span>
           </h1>
         </div>
         <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.4em] ml-5">
@@ -145,12 +145,12 @@ export default function PlansPage() {
         ) : activeTerminals.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {activeTerminals.map((node: any) => (
-              <div key={node.id} className="bg-white border border-purple-600/20 p-6 rounded-[2rem] relative overflow-hidden group shadow-sm">
+              <div key={node.id} className="bg-white border border-[#22c55e]/20 p-6 rounded-[2rem] relative overflow-hidden group shadow-sm">
                  <div className="absolute top-0 right-0 p-4">
                     <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_#10b981]" />
                  </div>
                  <div className="flex flex-col gap-1 mb-4">
-                    <p className="text-[9px] font-black text-purple-600 uppercase tracking-widest">{node.planName}</p>
+                    <p className="text-[9px] font-black text-[#22c55e] uppercase tracking-widest">{node.planName}</p>
                     <h3 className="text-xl font-bold text-slate-900 tracking-tighter italic">Rs. {node.amount.toFixed(2)}</h3>
                  </div>
                  <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100">
@@ -187,11 +187,11 @@ export default function PlansPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {plans.map((plan, i) => (
-              <div key={i} className={`relative bg-white border ${plan.popular ? 'border-purple-600/30 shadow-lg shadow-purple-600/5' : 'border-slate-200'} p-8 rounded-[2.5rem] flex flex-col group hover:scale-[1.02] transition-transform`}>
-                {plan.popular && <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-600 text-[9px] font-black px-4 py-1 rounded-full uppercase italic text-white">Top Performer</span>}
+              <div key={i} className={`relative bg-white border ${plan.popular ? 'border-[#22c55e]/30 shadow-lg shadow-[#22c55e]/5' : 'border-slate-200'} p-8 rounded-[2.5rem] flex flex-col group hover:scale-[1.02] transition-transform`}>
+                {plan.popular && <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#22c55e] text-[9px] font-black px-4 py-1 rounded-full uppercase italic text-white">Top Performer</span>}
                 
-                <div className="bg-slate-50 p-4 w-fit rounded-2xl border border-slate-100 mb-6 group-hover:border-purple-500/30 transition-colors">
-                  {iconMap[plan.icon] || <Zap className="text-purple-600" />}
+                <div className="bg-slate-50 p-4 w-fit rounded-2xl border border-slate-100 mb-6 group-hover:border-[#22c55e]/30 transition-colors">
+                  {iconMap[plan.icon] || <Zap className="text-[#22c55e]" />}
                 </div>
                 <h3 className="text-xl font-black uppercase italic tracking-tighter mb-4 text-slate-900">{plan.name}</h3>
                 
@@ -213,7 +213,7 @@ export default function PlansPage() {
 
                 <button 
                   onClick={() => setSelectedPlan(plan)}
-                  className={`w-full py-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 text-white ${plan.popular ? 'bg-purple-600 hover:bg-purple-700 shadow-xl shadow-purple-600/20' : 'bg-slate-800 hover:bg-slate-900'}`}
+                  className={`w-full py-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 text-white ${plan.popular ? 'bg-[#22c55e] hover:bg-[#16a34a] shadow-xl shadow-[#22c55e]/20' : 'bg-slate-800 hover:bg-slate-900'}`}
                 >
                   Start Investment <ArrowRight size={14} />
                 </button>
@@ -227,7 +227,7 @@ export default function PlansPage() {
       {selectedPlan && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white border border-slate-200 w-full max-w-md rounded-[2.5rem] p-8 relative overflow-hidden shadow-2xl">
-            <div className="absolute -top-24 -right-24 w-64 h-64 bg-purple-600/5 rounded-full blur-[80px]" />
+            <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#22c55e]/5 rounded-full blur-[80px]" />
             
             <button 
               onClick={() => setSelectedPlan(null)}
@@ -238,7 +238,7 @@ export default function PlansPage() {
 
             <div className="relative z-10">
               <div className="flex items-center gap-4 mb-6">
-                <div className="bg-purple-600/10 p-3 rounded-2xl text-purple-600">
+                <div className="bg-[#22c55e]/10 p-3 rounded-2xl text-[#22c55e]">
                   {iconMap[selectedPlan.icon] || <Zap size={24} />}
                 </div>
                 <div>
@@ -255,12 +255,12 @@ export default function PlansPage() {
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder={`Min Rs. ${selectedPlan.minAmount}`}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 mt-2 text-slate-900 focus:outline-none focus:border-purple-600 transition-all font-bold"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 mt-2 text-slate-900 focus:outline-none focus:border-[#22c55e] transition-all font-bold"
                   />
                   <p className="text-[9px] text-slate-400 mt-2 uppercase font-bold italic">Enter amount between Rs. ${selectedPlan.minAmount} and Rs. ${selectedPlan.maxAmount}</p>
                 </div>
 
-                <div className="bg-purple-50 border border-purple-100 p-4 rounded-2xl">
+                <div className="bg-[#22c55e]/50 border border-[#22c55e]/100 p-4 rounded-2xl">
                    <div className="flex justify-between text-[10px] font-black uppercase tracking-tight text-slate-500 mb-1">
                       <span>Daily Profit</span>
                       <span className="text-emerald-600">+{selectedPlan.roi}%</span>
@@ -274,7 +274,7 @@ export default function PlansPage() {
                 <button 
                   onClick={handlePurchase}
                   disabled={loading || success}
-                  className={`w-full py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] transition-all flex items-center justify-center gap-3 ${success ? 'bg-emerald-600' : 'bg-purple-600 hover:bg-purple-700 shadow-xl shadow-purple-600/20'} disabled:opacity-50 text-white`}
+                  className={`w-full py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] transition-all flex items-center justify-center gap-3 ${success ? 'bg-emerald-600' : 'bg-[#22c55e] hover:bg-[#16a34a] shadow-xl shadow-[#22c55e]/20'} disabled:opacity-50 text-white`}
                 >
                   {loading ? <Loader2 className="animate-spin" size={18} /> : success ? <CheckCircle2 size={18} /> : <Zap size={18} />}
                   {loading ? "Processing..." : success ? "Plan Active" : "Confirm Investment"}
