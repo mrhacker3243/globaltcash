@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     const deposit = await db.deposit.create({
       data: {
         amount: parseFloat(amount),
-        planName: planName || "Manual Deposit",
+        planName: planName || null, // Keep null for real deposits, set only for plan investments
         transactionHash,
         status: "PENDING",
         userId: (session.user as any).id,

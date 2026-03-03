@@ -28,6 +28,9 @@ export async function POST(req: Request) {
     }
 
     // 2. Start Transaction (Update Balance + Approve Deposit)
+    // For real deposits (no planName), set to APPROVED. For plan investments, status stays ACTIVE.
+    const newStatus = deposit.planName ? "ACTIVE" : "APPROVED";
+    
     await db.$transaction([
       db.user.update({
         where: { id: deposit.userId },
@@ -35,7 +38,7 @@ export async function POST(req: Request) {
       }),
       db.deposit.update({
         where: { id: depositId },
-        data: { status: "ACTIVE" }
+        data: { status: newStatus as any }
       })
     ]);
 
