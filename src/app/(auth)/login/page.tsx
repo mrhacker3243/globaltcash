@@ -12,8 +12,8 @@ const BrandLogo = () => (
       <Zap size={32} className="text-white fill-white" />
     </div>
     <div className="text-center">
-      <span className="block text-2xl font-black text-gray-900 italic uppercase tracking-tighter">Global Capital</span>
-      <span className="text-[10px] font-black text-[#E11D48] uppercase tracking-[0.4em]">Evolution Terminal</span>
+      <span className="block text-2xl font-black text-gray-900 italic uppercase tracking-tighter">Global Trust Cash</span>
+      <span className="text-[10px] font-black text-[#E11D48] uppercase tracking-[0.4em]">Evolution of wealth</span>
     </div>
   </div>
 );
@@ -71,7 +71,7 @@ export default function LoginPage() {
           <Link href="/" className="flex justify-center mb-8">
             <BrandLogo />
           </Link>
-          <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.3em] text-center">Secure Authentication Protocol</p>
+          <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.3em] text-center">Secured Authentication Protocol</p>
         </div>
 
         {/* Error Notification */}
@@ -87,7 +87,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-gray-400 ml-1 tracking-widest">Identity (Email)</label>
+              <label className="text-[10px] font-black uppercase text-gray-400 ml-1 tracking-widest">Enter Your (Email)</label>
               <div className="relative group">
                 <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#E11D48] transition-colors" size={20} />
                 <input 
@@ -95,14 +95,14 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@protocol.com"
+                  placeholder="email@gmail.com"
                   className="w-full bg-gray-50 border border-gray-100 rounded-[1.5rem] py-5 pl-14 pr-5 text-sm font-bold text-gray-900 focus:outline-none focus:border-rose-200 focus:bg-white focus:ring-4 focus:ring-rose-50 transition-all placeholder:text-gray-300"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-gray-400 ml-1 tracking-widest">Security Key</label>
+              <label className="text-[10px] font-black uppercase text-gray-400 ml-1 tracking-widest">Enter your password</label>
               <div className="relative group">
                 <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#E11D48] transition-colors" size={20} />
                 <input 
@@ -131,7 +131,7 @@ export default function LoginPage() {
               {loading ? (
                 <><Loader2 className="animate-spin" size={20} /> Verifying...</>
               ) : (
-                <><LogIn size={20} /> Authorize Login</>
+                <><LogIn size={20} /> Login Account</>
               )}
             </button>
           </form>
@@ -140,11 +140,11 @@ export default function LoginPage() {
         {/* Footer Actions */}
         <div className="text-center space-y-6">
           <p className="text-gray-400 text-[11px] font-bold uppercase tracking-tighter">
-            New Node?{" "}
+            New User?{" "}
             <Link href="/register" className="text-[#E11D48] hover:underline underline-offset-4 decoration-2">Create Account</Link>
           </p>
           <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-900 text-[10px] font-black uppercase tracking-widest transition-all italic">
-            ← Terminal Mainframe
+            ← Back to Home
           </Link>
         </div>
       </div>

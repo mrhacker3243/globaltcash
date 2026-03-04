@@ -12,13 +12,13 @@ export async function GET() {
 
     const userId = (session.user as any).id;
 
-    const activePlans = await db.userPlan.findMany({
+    const activePlans = await db.deposit.findMany({
       where: {
         userId: userId,
-        status: "ACTIVE"
-      },
-      include: {
-        plan: true
+        status: "ACTIVE",
+        planName: {
+          not: "Manual Deposit"
+        }
       },
       orderBy: { createdAt: "desc" }
     });
@@ -26,7 +26,7 @@ export async function GET() {
     return NextResponse.json(activePlans);
 
   } catch (error) {
-    console.error("Active plans fetch error:", error);
-    return NextResponse.json({ error: "Error fetching active plans" }, { status: 500 });
+    console.error("Active plans error:", error);
+    return NextResponse.json({ error: "Error fetching plans" }, { status: 500 });
   }
 }

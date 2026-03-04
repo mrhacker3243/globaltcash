@@ -20,14 +20,6 @@ export async function GET() {
         },
         withdrawals: {
           orderBy: { createdAt: "desc" }
-        },
-        userPlans: {   // ✅ IMPORTANT (make sure model name matches your schema)
-          where: {
-            status: "ACTIVE"
-          },
-          include: {
-            plan: true
-          }
         }
       }
     });
@@ -36,17 +28,24 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    const activePlans = user.deposits.filter(
+      (d) =>
+        d.status === "ACTIVE" &&
+        d.planName &&
+        d.planName !== "Manual Deposit"
+    );
+
     return NextResponse.json({
       name: user.name,
       email: user.email,
       balance: user.balance || 0,
       deposits: user.deposits || [],
       withdrawals: user.withdrawals || [],
-      activePlans: user.userPlans || []   // ✅ RETURN ACTIVE PLANS
+      activePlans
     });
 
   } catch (error) {
-    console.error("Dashboard API Error:", error);
+    console.error("Dashboard API error:", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });
   }
 }

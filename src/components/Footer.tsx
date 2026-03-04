@@ -12,7 +12,7 @@ const FooterLogo = () => (
     </div>
     <div className="flex flex-col leading-none">
       <span className="text-xl font-black text-gray-900 italic uppercase tracking-tighter">Global</span>
-      <span className="text-[9px] font-black text-[#E11D48] uppercase tracking-[0.3em]">Capital</span>
+      <span className="text-[9px] font-black text-[#E11D48] uppercase tracking-[0.3em]">Trust Cash</span>
     </div>
   </div>
 );

@@ -18,7 +18,7 @@ const BrandLogo = () => {
       <LogoIcon className="w-10 h-10 group-hover:rotate-[360deg] transition-transform duration-700 shadow-lg shadow-rose-200" />
       <div className="flex flex-col leading-none">
         <span className="text-xl font-black text-gray-900 italic uppercase tracking-tighter">Global</span>
-        <span className="text-[9px] font-black text-[#E11D48] uppercase tracking-[0.3em]">Capital</span>
+        <span className="text-[9px] font-black text-[#E11D48] uppercase tracking-[0.3em]">Trust Cash</span>
       </div>
     </div>
   );

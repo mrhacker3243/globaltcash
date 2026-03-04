@@ -1,10 +1,8 @@
 "use client";
 
-import { Zap, Trophy, Crown, ArrowRight, X, Loader2, CheckCircle2, Cpu } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
-import { usePlanSync } from "@/hooks/usePlanSync";
+import { Zap, Trophy, Crown, ArrowRight, X, Loader2, CheckCircle2, Cpu, AlertTriangle } from "lucide-react";
+import { useState, useEffect } from "react";
 
-// Exact screenshot accent color: Rose-Red
 const iconMap: Record<string, any> = {
   Zap: <Zap className="text-[#E11D48]" size={22} />,
   Trophy: <Trophy className="text-[#E11D48]" size={22} />,
@@ -17,9 +15,10 @@ export default function PlansPage() {
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [activeTerminals, setActiveTerminals] = useState<any[]>([]);
   const [fetchingActive, setFetchingActive] = useState(true);
-  const [syncStatus, setSyncStatus] = useState<string>("Online");
+  const [syncStatus] = useState<string>("Online");
 
   useEffect(() => {
     fetchPlans();
@@ -45,28 +44,51 @@ export default function PlansPage() {
 
   const handlePurchase = async () => {
     if (!amount) return;
+    
+    const investAmount = parseFloat(amount);
+
+    // --- NEW STRICT VALIDATION ---
+    if (investAmount < selectedPlan.minAmount) {
+      setError(`Min limit is Rs. ${selectedPlan.minAmount}`);
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+    if (investAmount > selectedPlan.maxAmount) {
+      setError(`Max limit is Rs. ${selectedPlan.maxAmount}`);
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch("/api/plans/purchase", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planName: selectedPlan.name, amount: parseFloat(amount) })
+        body: JSON.stringify({ planName: selectedPlan.name, amount: investAmount })
       });
+      
+      const data = await res.json();
+
       if (res.ok) {
         setSuccess(true);
         fetchActivePlans();
         setTimeout(() => { setSuccess(false); setSelectedPlan(null); setAmount(""); }, 2000);
+      } else {
+        // Backend balance check error
+        setError(data.error || "Insufficient Balance");
+        setTimeout(() => setError(null), 3000);
       }
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); }
+    } catch (err) { 
+        setError("Connection Error");
+    } finally { setLoading(false); }
   };
 
   return (
-    // EXACT SCREENSHOT THEME
     <div className="bg-[#F3F4F6] min-h-screen p-5 md:p-10 pt-24 lg:pt-10 font-sans text-[#1F2937]">
       <div className="max-w-6xl mx-auto space-y-12">
         
-        {/* Header Section */}
+        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <h1 className="text-3xl font-black tracking-tight text-[#111827]">
@@ -80,13 +102,13 @@ export default function PlansPage() {
           </div>
         </div>
 
-        {/* 1. Active Plans - Minimalist White Cards */}
+        {/* Active Terminals */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {fetchingActive ? (
             [1, 2].map(i => <div key={i} className="h-44 bg-white rounded-[2rem] shadow-sm animate-pulse" />)
           ) : activeTerminals.length > 0 ? (
             activeTerminals.map((node: any) => (
-              <div key={node.id} className="bg-white p-7 rounded-[2.5rem] shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-white relative overflow-hidden transition-all hover:shadow-md">
+              <div key={node.id} className="bg-white p-7 rounded-[2.5rem] shadow-sm border border-white relative overflow-hidden transition-all hover:shadow-md">
                  <div className="flex justify-between items-start mb-6">
                     <div className="bg-[#FFF1F2] p-3.5 rounded-2xl text-[#E11D48] border border-[#FFE4E6]">
                        <Cpu size={24} />
@@ -99,12 +121,12 @@ export default function PlansPage() {
             ))
           ) : (
             <div className="col-span-full py-10 text-center bg-white rounded-[2rem] border border-[#E5E7EB] shadow-sm">
-               <p className="text-[#9CA3AF] text-xs font-bold uppercase tracking-widest">Waiting for plans...</p>
+               <p className="text-[#9CA3AF] text-xs font-bold uppercase tracking-widest">No active plans found.</p>
             </div>
           )}
         </div>
 
-        {/* 2. Available Plans - Butter White with Rose Red Accent */}
+        {/* Available Plans List */}
         <div className="space-y-8">
           <div className="flex items-center gap-4">
              <h2 className="text-2xl font-black text-[#111827]">Investment Plans</h2>
@@ -113,12 +135,12 @@ export default function PlansPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {plans.map((plan, i) => (
-              <div key={i} className={`bg-white p-9 rounded-[3rem] shadow-[0_20px_60px_rgba(0,0,0,0.05)] border-2 ${plan.popular ? 'border-[#E11D48]/10' : 'border-white'} flex flex-col hover:scale-[1.01] transition-all duration-300`}>
+              <div key={i} className={`bg-white p-9 rounded-[3rem] shadow-sm border-2 ${plan.popular ? 'border-rose-100' : 'border-white'} flex flex-col hover:scale-[1.01] transition-all`}>
                 <div className="flex justify-between items-center mb-10">
                    <div className="bg-[#F9FAFB] p-4 rounded-2xl border border-[#F3F4F6]">
                       {iconMap[plan.icon] || <Zap className="text-[#E11D48]" />}
                    </div>
-                   {plan.popular && <span className="bg-[#E11D48] text-white text-[9px] font-black px-4 py-1.5 rounded-full shadow-lg shadow-rose-200 uppercase tracking-tighter">Most Active</span>}
+                   {plan.popular && <span className="bg-[#E11D48] text-white text-[9px] font-black px-4 py-1.5 rounded-full shadow-lg shadow-rose-100 uppercase tracking-tighter">Most Active</span>}
                 </div>
 
                 <h3 className="text-xl font-black text-[#111827] mb-2">{plan.name}</h3>
@@ -129,6 +151,7 @@ export default function PlansPage() {
                    </div>
                 </div>
 
+                {/* Plan Stats */}
                 <div className="space-y-4 mb-10 text-[11px] font-bold text-[#6B7280]">
                   <div className="flex justify-between items-center pb-3 border-b border-[#F9FAFB]">
                     <span className="uppercase tracking-widest opacity-60">Entry Range</span> 
@@ -142,7 +165,7 @@ export default function PlansPage() {
 
                 <button 
                   onClick={() => setSelectedPlan(plan)}
-                  className={`w-full py-5 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 ${plan.popular ? 'bg-[#E11D48] text-white hover:bg-[#BE123C] shadow-lg shadow-rose-100' : 'bg-[#111827] text-white hover:bg-black shadow-lg shadow-gray-200'}`}
+                  className={`w-full py-5 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 ${plan.popular ? 'bg-[#E11D48] text-white hover:bg-[#BE123C]' : 'bg-[#111827] text-white hover:bg-black'}`}
                 >
                   Start Plan <ArrowRight size={16} />
                 </button>
@@ -152,32 +175,33 @@ export default function PlansPage() {
         </div>
       </div>
 
-      {/* Confirmation Modal - Exact Screenshot Style */}
+      {/* Confirmation Modal */}
       {selectedPlan && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#111827]/30 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-md rounded-[3rem] p-10 relative shadow-2xl">
-            <button onClick={() => setSelectedPlan(null)} className="absolute top-8 right-8 text-[#D1D5DB] hover:text-[#111827] transition-colors"><X size={24} /></button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#111827]/40 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-md rounded-[3rem] p-10 relative shadow-2xl scale-in-center">
+            <button onClick={() => {setSelectedPlan(null); setError(null);}} className="absolute top-8 right-8 text-[#D1D5DB] hover:text-[#111827]"><X size={24} /></button>
             
             <div className="flex flex-col items-center text-center mb-10">
               <div className="bg-[#FFF1F2] p-5 rounded-3xl text-[#E11D48] border border-[#FFE4E6] mb-4">
                  {iconMap[selectedPlan.icon] || <Zap size={30} />}
               </div>
               <h3 className="text-2xl font-black text-[#111827]">{selectedPlan.name}</h3>
-              <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-widest mt-1">Configure Deployment</p>
+              <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-widest mt-1 italic">Limits: Rs. {selectedPlan.minAmount} - {selectedPlan.maxAmount}</p>
             </div>
 
             <div className="space-y-8">
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-[#9CA3AF] uppercase tracking-[0.2em] ml-1">Investment Amount</label>
-                <div className="relative">
-                  <input 
-                    type="number" 
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    className="w-full bg-[#F9FAFB] border-2 border-[#F3F4F6] focus:border-[#E11D48] focus:bg-white rounded-2xl py-5 px-8 text-[#111827] outline-none font-black text-xl transition-all"
-                    placeholder="0.00"
-                  />
+                <div className="flex justify-between">
+                  <label className="text-[10px] font-black text-[#9CA3AF] uppercase tracking-[0.2em] ml-1">Investment Amount</label>
+                  {error && <span className="text-[#E11D48] text-[10px] font-black uppercase animate-pulse flex items-center gap-1"><AlertTriangle size={12}/> {error}</span>}
                 </div>
+                <input 
+                  type="number" 
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className={`w-full bg-[#F9FAFB] border-2 ${error ? 'border-[#E11D48]' : 'border-[#F3F4F6]'} focus:border-[#E11D48] focus:bg-white rounded-2xl py-5 px-8 text-[#111827] outline-none font-black text-xl transition-all`}
+                  placeholder="0.00"
+                />
               </div>
 
               <button 
@@ -185,7 +209,7 @@ export default function PlansPage() {
                 disabled={loading || success}
                 className={`w-full py-5 rounded-2xl font-black uppercase text-[11px] tracking-[0.2em] transition-all flex items-center justify-center gap-3 ${success ? 'bg-[#10B981]' : 'bg-[#E11D48] hover:bg-[#BE123C] shadow-xl shadow-rose-100'} text-white disabled:opacity-50`}
               >
-                {loading ? <Loader2 className="animate-spin" size={20} /> : success ? <CheckCircle2 size={20} /> : "Finalize Activation"}
+                {loading ? <Loader2 className="animate-spin" size={20} /> : success ? <><CheckCircle2 size={20} /> Activated</> : "Finalize Activation"}
               </button>
             </div>
           </div>

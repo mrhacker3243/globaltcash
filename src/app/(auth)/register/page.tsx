@@ -14,8 +14,8 @@ const BrandLogo = () => (
       <Zap size={32} className="text-white fill-white" />
     </div>
     <div className="text-center">
-      <span className="block text-2xl font-black text-gray-900 italic uppercase tracking-tighter">Global Capital</span>
-      <span className="text-[10px] font-black text-[#E11D48] uppercase tracking-[0.4em]">Node Registration</span>
+      <span className="block text-2xl font-black text-gray-900 italic uppercase tracking-tighter">Global Trust cash</span>
+      <span className="text-[10px] font-black text-[#E11D48] uppercase tracking-[0.4em]">register Your Registration</span>
     </div>
   </div>
 );
@@ -122,14 +122,14 @@ function RegisterForm() {
 
             {/* Email Address */}
             <div className="space-y-1.5">
-              <label className="text-[9px] font-black uppercase text-gray-400 ml-2 tracking-widest">Digital Identity</label>
+              <label className="text-[9px] font-black uppercase text-gray-400 ml-2 tracking-widest">Email Address</label>
               <div className="relative group">
                 <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#E11D48] transition-colors" size={18} />
                 <input 
                   type="email" required
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  placeholder="email@network.com"
+                  placeholder="email@gmail.com"
                   className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-4 pl-14 pr-5 text-sm font-bold text-gray-900 focus:outline-none focus:border-rose-200 focus:bg-white transition-all"
                 />
               </div>
@@ -138,7 +138,7 @@ function RegisterForm() {
             {/* Referral Code (Locked Logic) */}
             <div className="space-y-1.5">
               <label className="text-[9px] font-black uppercase text-gray-400 ml-2 tracking-widest">
-                Referral Node {searchParams.get("ref") && "(LOCKED)"}
+                Referral code {searchParams.get("ref") && "(LOCKED)"}
               </label>
               <div className="relative group">
                 <Share2 className={`absolute left-5 top-1/2 -translate-y-1/2 transition-colors ${searchParams.get("ref") ? 'text-[#E11D48]' : 'text-gray-300'}`} size={18} />
@@ -166,7 +166,7 @@ function RegisterForm() {
 <div className="space-y-4">
   {/* Set Password Field */}
   <div className="space-y-1.5">
-    <label className="text-[9px] font-black uppercase text-gray-400 ml-2 tracking-widest">Set Security Key</label>
+    <label className="text-[9px] font-black uppercase text-gray-400 ml-2 tracking-widest">Set Your Password</label>
     <div className="relative group">
       <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#E11D48] transition-colors" size={18} />
       <input 
@@ -190,7 +190,7 @@ function RegisterForm() {
 
   {/* Confirm Password Field */}
   <div className="space-y-1.5">
-    <label className="text-[9px] font-black uppercase text-gray-400 ml-2 tracking-widest">Confirm Security Key</label>
+    <label className="text-[9px] font-black uppercase text-gray-400 ml-2 tracking-widest">Confirm Your Password</label>
     <div className="relative group">
       <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#E11D48] transition-colors" size={18} />
       <input 
@@ -217,11 +217,11 @@ function RegisterForm() {
 
         <div className="text-center space-y-6">
           <p className="text-gray-400 text-[11px] font-bold uppercase tracking-tighter">
-            Already registered?{" "}
-            <Link href="/login" className="text-[#E11D48] hover:underline underline-offset-4 decoration-2">Access Terminal</Link>
+            Already registered Click on?{" "}
+            <Link href="/login" className="text-[#E11D48] hover:underline underline-offset-4 decoration-2">login</Link>
           </p>
           <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-900 text-[10px] font-black uppercase tracking-widest transition-all italic">
-            ← System Overview
+            ← Back to Home
           </Link>
         </div>
       </div>
