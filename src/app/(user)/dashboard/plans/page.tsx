@@ -1,6 +1,6 @@
 "use client";
 
-import { Zap, Trophy, Crown, ArrowRight, X, Loader2, CheckCircle2, Cpu, AlertTriangle } from "lucide-react";
+import { Zap, Trophy, Crown, ArrowRight, X, Loader2, CheckCircle2, Cpu, AlertTriangle, LayoutGrid, Activity, Eye } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const iconMap: Record<string, any> = {
@@ -18,7 +18,7 @@ export default function PlansPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTerminals, setActiveTerminals] = useState<any[]>([]);
   const [fetchingActive, setFetchingActive] = useState(true);
-  const [syncStatus] = useState<string>("Online");
+  const [showMyPlans, setShowMyPlans] = useState(false); // New State for Button
 
   useEffect(() => {
     fetchPlans();
@@ -44,175 +44,125 @@ export default function PlansPage() {
 
   const handlePurchase = async () => {
     if (!amount) return;
-    
     const investAmount = parseFloat(amount);
-
-    // --- NEW STRICT VALIDATION ---
-    if (investAmount < selectedPlan.minAmount) {
-      setError(`Min limit is Rs. ${selectedPlan.minAmount}`);
-      setTimeout(() => setError(null), 3000);
-      return;
-    }
-    if (investAmount > selectedPlan.maxAmount) {
-      setError(`Max limit is Rs. ${selectedPlan.maxAmount}`);
-      setTimeout(() => setError(null), 3000);
+    if (investAmount < selectedPlan.minAmount || investAmount > selectedPlan.maxAmount) {
+      setError(`Limit: Rs. ${selectedPlan.minAmount} - ${selectedPlan.maxAmount}`);
       return;
     }
 
     setLoading(true);
-    setError(null);
     try {
       const res = await fetch("/api/plans/purchase", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planName: selectedPlan.name, amount: investAmount })
       });
-      
-      const data = await res.json();
-
       if (res.ok) {
         setSuccess(true);
         fetchActivePlans();
         setTimeout(() => { setSuccess(false); setSelectedPlan(null); setAmount(""); }, 2000);
       } else {
-        // Backend balance check error
-        setError(data.error || "Insufficient Balance");
-        setTimeout(() => setError(null), 3000);
+        const data = await res.json();
+        setError(data.error || "Low Balance");
       }
-    } catch (err) { 
-        setError("Connection Error");
-    } finally { setLoading(false); }
+    } catch (err) { setError("Error"); }
+    finally { setLoading(false); }
   };
 
   return (
-    <div className="bg-[#F3F4F6] min-h-screen p-5 md:p-10 pt-24 lg:pt-10 font-sans text-[#1F2937]">
-      <div className="max-w-6xl mx-auto space-y-12">
+    <div className="bg-[#F8FAFC] min-h-screen p-4 md:p-10 pt-24 font-sans text-[#1E293B]">
+      <div className="max-w-6xl mx-auto">
         
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        {/* TOP BAR: Header + VIEW BUTTON */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12 bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100">
           <div>
-            <h1 className="text-3xl font-black tracking-tight text-[#111827]">
-              Current <span className="text-[#E11D48]">Plans</span>
+            <h1 className="text-3xl font-black text-[#0F172A] uppercase italic leading-none">
+              Investment <span className="text-[#E11D48]">Plans</span>
             </h1>
-            <p className="text-[#6B7280] text-sm font-medium mt-1 italic">Live plans monitoring active.</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">Select a package to start</p>
           </div>
-          <div className="flex items-center gap-3 bg-white px-5 py-2.5 rounded-2xl shadow-sm border border-[#E5E7EB]">
-             <div className="w-2.5 h-2.5 bg-[#10B981] rounded-full animate-pulse" />
-             <span className="text-[10px] font-black uppercase tracking-widest text-[#4B5563]">{syncStatus}</span>
-          </div>
+          
+          {/* THE MAGIC BUTTON */}
+          <button 
+            onClick={() => setShowMyPlans(true)}
+            className="flex items-center gap-3 bg-[#0F172A] text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-gray-200 active:scale-95"
+          >
+            <Eye size={18} className="text-[#E11D48]" /> View My Plans ({activeTerminals.length})
+          </button>
         </div>
 
-        {/* Active Terminals */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {fetchingActive ? (
-            [1, 2].map(i => <div key={i} className="h-44 bg-white rounded-[2rem] shadow-sm animate-pulse" />)
-          ) : activeTerminals.length > 0 ? (
-            activeTerminals.map((node: any) => (
-              <div key={node.id} className="bg-white p-7 rounded-[2.5rem] shadow-sm border border-white relative overflow-hidden transition-all hover:shadow-md">
-                 <div className="flex justify-between items-start mb-6">
-                    <div className="bg-[#FFF1F2] p-3.5 rounded-2xl text-[#E11D48] border border-[#FFE4E6]">
-                       <Cpu size={24} />
-                    </div>
-                    <div className="bg-[#ECFDF5] text-[#059669] text-[9px] font-black px-3 py-1.5 rounded-xl uppercase tracking-wider">Active</div>
-                 </div>
-                 <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-[0.2em] mb-1">{node.planName}</p>
-                 <h3 className="text-2xl font-black text-[#111827]">Rs. {node.amount.toLocaleString()}</h3>
+        {/* PLANS GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {plans.map((plan, i) => (
+            <div key={i} className="bg-white p-8 rounded-[3rem] shadow-sm border border-gray-50 flex flex-col group hover:shadow-xl transition-all">
+              <div className="bg-gray-50 w-14 h-14 rounded-2xl flex items-center justify-center mb-8 border border-gray-100 group-hover:scale-110 transition-transform">
+                {iconMap[plan.icon] || <Zap className="text-[#E11D48]" />}
               </div>
-            ))
-          ) : (
-            <div className="col-span-full py-10 text-center bg-white rounded-[2rem] border border-[#E5E7EB] shadow-sm">
-               <p className="text-[#9CA3AF] text-xs font-bold uppercase tracking-widest">No active plans found.</p>
+              <h3 className="text-xl font-black text-[#0F172A] uppercase mb-1">{plan.name}</h3>
+              <div className="flex items-baseline gap-1 mb-8">
+                <span className="text-5xl font-black text-[#0F172A]">{plan.roi}%</span>
+                <span className="text-[10px] font-bold text-[#E11D48] uppercase tracking-widest">/ Daily</span>
+              </div>
+              <div className="space-y-3 mb-8 text-[11px] font-bold text-gray-400 uppercase border-t border-gray-50 pt-6">
+                <div className="flex justify-between"><span>Limit</span> <span className="text-[#0F172A]">Rs. {plan.minAmount}+</span></div>
+                <div className="flex justify-between"><span>Days</span> <span className="text-[#0F172A]">{plan.duration}</span></div>
+              </div>
+              <button onClick={() => setSelectedPlan(plan)} className="w-full py-4 bg-[#F8FAFC] text-[#0F172A] border border-gray-100 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#E11D48] hover:text-white transition-all flex items-center justify-center gap-2">
+                Invest Now <ArrowRight size={14} />
+              </button>
             </div>
-          )}
-        </div>
-
-        {/* Available Plans List */}
-        <div className="space-y-8">
-          <div className="flex items-center gap-4">
-             <h2 className="text-2xl font-black text-[#111827]">Investment Plans</h2>
-             <div className="h-[2px] flex-1 bg-[#E5E7EB]" />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {plans.map((plan, i) => (
-              <div key={i} className={`bg-white p-9 rounded-[3rem] shadow-sm border-2 ${plan.popular ? 'border-rose-100' : 'border-white'} flex flex-col hover:scale-[1.01] transition-all`}>
-                <div className="flex justify-between items-center mb-10">
-                   <div className="bg-[#F9FAFB] p-4 rounded-2xl border border-[#F3F4F6]">
-                      {iconMap[plan.icon] || <Zap className="text-[#E11D48]" />}
-                   </div>
-                   {plan.popular && <span className="bg-[#E11D48] text-white text-[9px] font-black px-4 py-1.5 rounded-full shadow-lg shadow-rose-100 uppercase tracking-tighter">Most Active</span>}
-                </div>
-
-                <h3 className="text-xl font-black text-[#111827] mb-2">{plan.name}</h3>
-                <div className="mb-10">
-                   <div className="flex items-baseline gap-1">
-                      <span className="text-5xl font-black text-[#111827]">{plan.roi}%</span>
-                      <span className="text-xs font-black text-[#E11D48] uppercase italic">/ Daily</span>
-                   </div>
-                </div>
-
-                {/* Plan Stats */}
-                <div className="space-y-4 mb-10 text-[11px] font-bold text-[#6B7280]">
-                  <div className="flex justify-between items-center pb-3 border-b border-[#F9FAFB]">
-                    <span className="uppercase tracking-widest opacity-60">Entry Range</span> 
-                    <span className="text-[#111827]">Rs. {plan.minAmount} - {plan.maxAmount}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="uppercase tracking-widest opacity-60">Contract</span> 
-                    <span className="text-[#111827]">{plan.duration}</span>
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => setSelectedPlan(plan)}
-                  className={`w-full py-5 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 ${plan.popular ? 'bg-[#E11D48] text-white hover:bg-[#BE123C]' : 'bg-[#111827] text-white hover:bg-black'}`}
-                >
-                  Start Plan <ArrowRight size={16} />
-                </button>
-              </div>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* Confirmation Modal */}
-      {selectedPlan && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#111827]/40 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-md rounded-[3rem] p-10 relative shadow-2xl scale-in-center">
-            <button onClick={() => {setSelectedPlan(null); setError(null);}} className="absolute top-8 right-8 text-[#D1D5DB] hover:text-[#111827]"><X size={24} /></button>
-            
-            <div className="flex flex-col items-center text-center mb-10">
-              <div className="bg-[#FFF1F2] p-5 rounded-3xl text-[#E11D48] border border-[#FFE4E6] mb-4">
-                 {iconMap[selectedPlan.icon] || <Zap size={30} />}
-              </div>
-              <h3 className="text-2xl font-black text-[#111827]">{selectedPlan.name}</h3>
-              <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-widest mt-1 italic">Limits: Rs. {selectedPlan.minAmount} - {selectedPlan.maxAmount}</p>
+      {/* --- SIDE DRAWER FOR "MY PLANS" --- */}
+      {showMyPlans && (
+        <div className="fixed inset-0 z-[200] flex justify-end">
+          <div className="absolute inset-0 bg-[#0F172A]/40 backdrop-blur-sm" onClick={() => setShowMyPlans(false)} />
+          <div className="relative w-full max-w-md bg-white h-full shadow-2xl p-8 animate-in slide-in-from-right duration-300">
+            <div className="flex items-center justify-between mb-10 pb-6 border-b border-gray-100">
+               <h2 className="text-2xl font-black text-[#0F172A] uppercase italic">My Portfolios</h2>
+               <button onClick={() => setShowMyPlans(false)} className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors"><X size={20}/></button>
             </div>
 
-            <div className="space-y-8">
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <label className="text-[10px] font-black text-[#9CA3AF] uppercase tracking-[0.2em] ml-1">Investment Amount</label>
-                  {error && <span className="text-[#E11D48] text-[10px] font-black uppercase animate-pulse flex items-center gap-1"><AlertTriangle size={12}/> {error}</span>}
+            <div className="space-y-4 overflow-y-auto max-h-[80vh] pr-2 custom-scrollbar">
+              {activeTerminals.length > 0 ? activeTerminals.map((node: any) => (
+                <div key={node.id} className="bg-[#0F172A] p-6 rounded-[2rem] relative overflow-hidden group">
+                  <div className="relative z-10 flex justify-between items-center mb-4">
+                    <div className="w-10 h-10 bg-[#E11D48] rounded-xl flex items-center justify-center text-white"><Cpu size={20}/></div>
+                    <span className="text-[8px] font-black text-green-400 bg-green-400/10 px-3 py-1 rounded-full uppercase tracking-widest">Running</span>
+                  </div>
+                  <div className="relative z-10">
+                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">{node.planName}</p>
+                    <h4 className="text-2xl font-black text-white italic">Rs. {node.amount.toLocaleString()}</h4>
+                  </div>
+                  <div className="absolute -right-6 -bottom-6 w-20 h-20 bg-[#E11D48] opacity-10 rounded-full blur-2xl group-hover:opacity-20 transition-opacity"></div>
                 </div>
-                <input 
-                  type="number" 
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className={`w-full bg-[#F9FAFB] border-2 ${error ? 'border-[#E11D48]' : 'border-[#F3F4F6]'} focus:border-[#E11D48] focus:bg-white rounded-2xl py-5 px-8 text-[#111827] outline-none font-black text-xl transition-all`}
-                  placeholder="0.00"
-                />
-              </div>
-
-              <button 
-                onClick={handlePurchase}
-                disabled={loading || success}
-                className={`w-full py-5 rounded-2xl font-black uppercase text-[11px] tracking-[0.2em] transition-all flex items-center justify-center gap-3 ${success ? 'bg-[#10B981]' : 'bg-[#E11D48] hover:bg-[#BE123C] shadow-xl shadow-rose-100'} text-white disabled:opacity-50`}
-              >
-                {loading ? <Loader2 className="animate-spin" size={20} /> : success ? <><CheckCircle2 size={20} /> Activated</> : "Finalize Activation"}
-              </button>
+              )) : (
+                <div className="text-center py-20">
+                  <LayoutGrid size={48} className="mx-auto text-gray-100 mb-4" />
+                  <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.3em]">No Active Plans</p>
+                </div>
+              )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* PURCHASE MODAL (Same as before) */}
+      {selectedPlan && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-[#0F172A]/80 backdrop-blur-md">
+           <div className="bg-white w-full max-w-sm rounded-[3rem] p-10 relative animate-in zoom-in-95">
+             <button onClick={() => {setSelectedPlan(null); setError(null);}} className="absolute top-8 right-8 text-gray-300"><X size={24} /></button>
+             <h3 className="text-2xl font-black text-center uppercase italic mb-8">{selectedPlan.name}</h3>
+             <div className="space-y-6">
+                <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full bg-gray-50 border-2 border-gray-100 focus:border-[#E11D48] rounded-[1.5rem] py-5 px-6 text-xl font-black outline-none transition-all" placeholder="Enter Amount" />
+                {error && <p className="text-[#E11D48] text-[9px] font-black uppercase text-center">{error}</p>}
+                <button onClick={handlePurchase} disabled={loading} className="w-full py-5 bg-[#E11D48] text-white rounded-[1.5rem] font-black uppercase text-xs tracking-widest shadow-xl shadow-rose-100 active:scale-95">
+                   {loading ? "Processing..." : success ? "Activated!" : "Confirm Investment"}
+                </button>
+             </div>
+           </div>
         </div>
       )}
     </div>
