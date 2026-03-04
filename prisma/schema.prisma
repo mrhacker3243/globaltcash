@@ -42,14 +42,13 @@ model Deposit {
   id              String         @id @default(cuid())
   userId          String
   amount          Float
-  gateway         String?       
-  planName        String?       @default("Manual Deposit")
-  transactionId   String?       @unique 
-  transactionHash String?       @unique 
-  slipImage       String?       
+  gateway         String?        
+  planName        String?        @default("Manual Deposit")
+  transactionId   String?        @unique 
+  transactionHash String?        @unique 
+  slipImage       String?        
   status          DepositStatus  @default(PENDING)
   createdAt       DateTime       @default(now())
-  // Timer aur Records ke liye niche wale fields
   lastClaimedAt   DateTime       @default(now())
   profitRecords   ProfitRecord[] 
   user            User           @relation(fields: [userId], references: [id])
@@ -59,7 +58,7 @@ model ProfitRecord {
   id          String   @id @default(cuid())
   depositId   String
   amount      Float
-  status      String   @default("PENDING") // PENDING, CLAIMED
+  status      String   @default("PENDING")
   createdAt   DateTime @default(now())
   deposit     Deposit  @relation(fields: [depositId], references: [id])
 }
