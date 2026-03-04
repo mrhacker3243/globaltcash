@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Copy, CheckCircle2, Wallet, Zap, UploadCloud, ArrowLeft, ShieldCheck } from "lucide-react";
+import { Copy, CheckCircle2, UploadCloud, ArrowLeft } from "lucide-react";
 
 export default function DepositPage() {
   const [selectedMethod, setSelectedMethod] = useState<any>(null);
@@ -8,25 +8,11 @@ export default function DepositPage() {
   const [slipImage, setSlipImage] = useState("");
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
-
-  // FETCH PROFILE (NO CACHE)
-  const fetchProfileData = async () => {
-    try {
-      const res = await fetch("/api/user/profile", { cache: "no-store" });
-      const data = await res.json();
-      setProfile(data);
-    } catch (err) {
-      console.error("Profile fetch error:", err);
-    }
-  };
 
   useEffect(() => {
     fetch("/api/settings", { cache: "no-store" })
       .then(res => res.json())
       .then(data => setSettings(data));
-
-    fetchProfileData();
   }, []);
 
   const methods = settings ? [
@@ -88,7 +74,6 @@ export default function DepositPage() {
 
       if (res.ok) {
         alert("Deposit request submitted!");
-        await fetchProfileData();
         setSelectedMethod(null);
         setAmount("");
         setSlipImage("");
@@ -98,18 +83,6 @@ export default function DepositPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatPKR = (val: number) => Number(val || 0).toLocaleString("en-PK");
-
-  const calculateTotal = () => {
-    const backendTotal = profile?.totalDeposited || profile?.total_deposited || 0;
-    if (Number(backendTotal) > 0) return Number(backendTotal);
-    
-    if (profile?.deposits && Array.isArray(profile.deposits)) {
-      return profile.deposits.reduce((acc: number, curr: any) => acc + Number(curr.amount || 0), 0);
-    }
-    return 0;
   };
 
   return (
@@ -136,42 +109,22 @@ export default function DepositPage() {
         </div>
 
         {!selectedMethod ? (
-          /* STEP 1: GRID VIEW */
-          <div className="space-y-8 animate-in fade-in duration-500">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-white flex justify-between items-center">
+          /* STEP 1: ONLY PAYMENT METHODS - CARDS REMOVED */
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in duration-500">
+            {methods.map((m) => (
+              <div key={m.id} onClick={() => setSelectedMethod(m)} className="bg-white p-10 rounded-[3rem] border-2 border-transparent shadow-sm cursor-pointer hover:border-[#E11D48] transition-all flex flex-col items-center text-center gap-6 group">
+                <div className="w-20 h-20 rounded-3xl overflow-hidden bg-gray-50 p-3 border border-gray-100 group-hover:scale-110 transition-transform">
+                  <img src={m.logo} alt={m.name} className="w-full h-full object-contain" />
+                </div>
                 <div>
-                  <p className="text-[10px] font-black text-[#9CA3AF] uppercase tracking-widest mb-1 italic">Available Balance</p>
-                  <h3 className="text-4xl font-black text-[#111827]">Rs. {formatPKR(profile?.balance)}</h3>
+                  <span className="text-[9px] font-black text-[#E11D48] bg-rose-50 px-3 py-1 rounded-full uppercase tracking-widest mb-2 inline-block">{m.type}</span>
+                  <h3 className="text-xl font-black text-[#111827]">{m.name}</h3>
                 </div>
-                <div className="bg-[#FFF1F2] p-5 rounded-3xl text-[#E11D48]"><Wallet size={28} /></div>
               </div>
-
-              <div className="bg-[#111827] p-8 rounded-[2.5rem] shadow-xl flex justify-between items-center">
-                <div>
-                  <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 italic">Total Deposits</p>
-                  <h3 className="text-4xl font-black text-white italic tracking-tighter">Rs. {formatPKR(calculateTotal())}</h3>
-                </div>
-                <div className="bg-white/10 p-5 rounded-3xl text-[#E11D48]"><Zap size={28} /></div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-              {methods.map((m) => (
-                <div key={m.id} onClick={() => setSelectedMethod(m)} className="bg-white p-10 rounded-[3rem] border-2 border-transparent shadow-sm cursor-pointer hover:border-[#E11D48] transition-all flex flex-col items-center text-center gap-6 group">
-                  <div className="w-20 h-20 rounded-3xl overflow-hidden bg-gray-50 p-3 border border-gray-100 group-hover:scale-110 transition-transform">
-                    <img src={m.logo} alt={m.name} className="w-full h-full object-contain" />
-                  </div>
-                  <div>
-                    <span className="text-[9px] font-black text-[#E11D48] bg-rose-50 px-3 py-1 rounded-full uppercase tracking-widest mb-2 inline-block">{m.type}</span>
-                    <h3 className="text-xl font-black text-[#111827]">{m.name}</h3>
-                  </div>
-                </div>
-              ))}
-            </div>
+            ))}
           </div>
         ) : (
-          /* STEP 2: FORM VIEW (The one you thought was removed) */
+          /* STEP 2: FORM VIEW */
           <div className="animate-in zoom-in-95 fade-in duration-500">
             <div className="bg-white rounded-[3.5rem] shadow-2xl border border-white overflow-hidden">
               <div className="grid grid-cols-1 lg:grid-cols-2">
@@ -224,7 +177,7 @@ export default function DepositPage() {
                       <input type="file" id="slip" className="hidden" onChange={handleFileChange} required />
                       <label htmlFor="slip" className="w-full bg-gray-50 border-2 border-dashed border-gray-200 py-10 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer transition-all hover:border-[#E11D48]">
                         {slipImage ? <CheckCircle2 size={32} className="text-emerald-500 animate-bounce" /> : <UploadCloud size={32} className="text-gray-300" />}
-                        <span className="text-[10px] font-black uppercase text-gray-400 mt-2">Screenshot Attached</span>
+                        <span className="text-[10px] font-black uppercase text-gray-400 mt-2">{slipImage ? "Screenshot Attached" : "Click to Upload Screenshot"}</span>
                       </label>
                     </div>
 
@@ -233,7 +186,6 @@ export default function DepositPage() {
                     </button>
                   </form>
                 </div>
-
               </div>
             </div>
           </div>
