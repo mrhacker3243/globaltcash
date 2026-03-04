@@ -1,47 +1,46 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Bell, Search, Settings, ShieldCheck, Activity } from "lucide-react";
+import { Bell, Search, Activity } from "lucide-react";
 
 export default function DashboardHeader({ type = "user" }: { type?: "user" | "admin" }) {
   const pathname = usePathname();
 
+  // Bilkul simple titles
   const getPageTitle = () => {
     if (pathname.includes("/plans")) return "Investment Plans";
-    if (pathname.includes("/deposit")) return "Add Deposits";
-    if (pathname.includes("/withdraw")) return "Withdraw Funds";
-    if (pathname.includes("/affiliates") || pathname.includes("/investors")) return "My Referrals";
-    if (pathname.includes("/settings")) return "Profile Settings";
-    if (pathname.includes("/wallet") || pathname.includes("/railway")) return "System Status";
-    return type === "admin" ? "Admin Panel" : "User Dashboard";
+    if (pathname.includes("/deposit")) return "Deposit Money";
+    if (pathname.includes("/withdraw")) return "Withdraw Money";
+    if (pathname.includes("/affiliates") || pathname.includes("/investors")) return "My Team";
+    if (pathname.includes("/settings")) return "Settings";
+    if (pathname.includes("/wallet")) return "Wallet Status";
+    return type === "admin" ? "Admin Panel" : "Dashboard";
   };
 
+  // Simple and clear subtitles
   const getPageSubtitle = () => {
-     if (pathname.includes("/plans")) return "Choose your growth strategy";
-     if (pathname.includes("/deposit")) return "Inject liquidity to terminal";
-     if (pathname.includes("/withdraw")) return "Extract funds to wallet";
-     if (pathname.includes("/affiliates")) return "Network expansion status";
-     if (pathname.includes("/settings")) return "System & Security Config";
-     return "Encrypted Session • Status: Secure";
-    };
+     if (pathname.includes("/plans")) return "Select a plan to start earning";
+     if (pathname.includes("/deposit")) return "Add funds to your account";
+     if (pathname.includes("/withdraw")) return "Send money to your bank/wallet";
+     if (pathname.includes("/affiliates")) return "Check your referral earnings";
+     if (pathname.includes("/settings")) return "Manage your profile details";
+     return "Welcome back • Account is active";
+  };
 
   return (
-    <header className="hidden lg:flex flex-col border-b border-gray-100 bg-white/80 backdrop-blur-xl sticky top-0 z-40 transition-all">
-      {/* Main Header Row */}
+    <header className="hidden lg:flex flex-col border-b border-rose-100 bg-[#FFFDF5]/90 backdrop-blur-xl sticky top-0 z-40 transition-all">
       <div className="flex items-center justify-between px-10 py-5">
         
-        {/* Left Side: Dynamic Title */}
+        {/* Left Side: Title & Subtitle */}
         <div className="flex items-center gap-6">
           <div className="relative">
             <div className="flex items-center gap-3 mb-1">
-              {/* Rose Red Indicator */}
-              <div className="h-6 w-1.5 rounded-full shadow-[0_0_15px_rgba(225,29,72,0.3)] bg-[#E11D48]" />
+              <div className="h-6 w-1.5 rounded-full bg-[#E11D48]" />
               <h1 className="text-2xl font-black uppercase tracking-tighter italic text-[#111827] leading-none">
                 {getPageTitle()}
               </h1>
             </div>
-            <p className="text-gray-400 text-[9px] font-black uppercase tracking-[0.3em] ml-5 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+            <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider ml-5 flex items-center gap-2">
               {getPageSubtitle()}
             </p>
           </div>
@@ -49,33 +48,21 @@ export default function DashboardHeader({ type = "user" }: { type?: "user" | "ad
 
         {/* Right Side: Actions */}
         <div className="flex items-center gap-4">
-          {/* Quick Stats (Optional but looks Pro) */}
-          <div className="hidden xl:flex items-center gap-4 mr-6 border-r border-gray-100 pr-6">
-            <div className="text-right">
-              <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none">Global</p>
-              <p className="text-[10px] font-bold text-[#111827] uppercase italic">Network</p>
-            </div>
-            <div className="bg-rose-50 p-2 rounded-xl text-[#E11D48]">
-               <Activity size={16} />
-            </div>
-          </div>
-
           <div className="flex items-center gap-2">
-            <button className="p-3 bg-gray-50 border border-gray-100 rounded-2xl text-gray-400 hover:text-[#E11D48] hover:border-rose-100 hover:bg-rose-50 transition-all group">
-              <Search size={18} className="group-hover:scale-110 transition-transform" />
+            <button className="p-3 bg-white border border-rose-50 rounded-2xl text-gray-400 hover:text-[#E11D48] transition-all shadow-sm">
+              <Search size={18} />
             </button>
-            <button className="p-3 bg-gray-50 border border-gray-100 rounded-2xl text-gray-400 hover:text-[#E11D48] hover:border-rose-100 hover:bg-rose-50 transition-all group relative">
-              <Bell size={18} className="group-hover:rotate-12 transition-transform" />
-              <span className="absolute top-3 right-3 w-2 h-2 bg-[#E11D48] rounded-full border-2 border-white" />
+            <button className="p-3 bg-white border border-rose-50 rounded-2xl text-gray-400 hover:text-[#E11D48] transition-all relative shadow-sm">
+              <Bell size={18} />
+              <span className="absolute top-3 right-3 w-2 h-2 bg-[#E11D48] rounded-full border-2 border-[#FFFDF5]" />
             </button>
           </div>
 
-          <div className="h-10 w-[1px] bg-gray-100 mx-2" />
+          <div className="h-8 w-[1px] bg-rose-100 mx-2" />
           
-          {/* Status Badge */}
-          <div className="bg-[#111827] px-4 py-2 rounded-2xl flex items-center gap-3 shadow-lg shadow-black/5">
-             <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-             <span className="text-[10px] font-black text-white uppercase tracking-widest">Live</span>
+          <div className="bg-[#E11D48] px-5 py-2.5 rounded-2xl flex items-center gap-3 shadow-md shadow-rose-200">
+             <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+             <span className="text-[10px] font-black text-white uppercase tracking-widest">Online</span>
           </div>
         </div>
       </div>

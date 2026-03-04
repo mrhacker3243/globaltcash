@@ -2,37 +2,43 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
-  BarChart3, Users, ArrowDownCircle, ArrowUpCircle, Settings
+  LayoutDashboard, Users, ArrowDownCircle, Settings
 } from "lucide-react";
 
 export default function AdminBottomNav() {
   const pathname = usePathname();
 
   const navItems = [
-    { icon: <BarChart3 size={20} />, label: "Stats", href: "/admin/dashboard" },
-    { icon: <Users size={20} />, label: "Users", href: "/admin/dashboard/investors" },
-    { icon: <ArrowDownCircle size={20} />, label: "In", href: "/admin/dashboard/deposits" },
-    { icon: <Settings size={20} />, label: "Settings", href: "/admin/dashboard/settings" },
+    { icon: <LayoutDashboard size={22} />, label: "Home", href: "/admin/dashboard" },
+    { icon: <Users size={22} />, label: "Users", href: "/admin/dashboard/investors" },
+    { icon: <ArrowDownCircle size={22} />, label: "Deposits", href: "/admin/dashboard/deposits" },
+    { icon: <Settings size={22} />, label: "Settings", href: "/admin/dashboard/settings" },
   ];
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 w-full bg-[#0f172a]/90 backdrop-blur-xl border-t border-[#22c55e]/20 px-2 py-3 z-40 flex justify-around items-center shadow-[0_-4px_10px_rgba(0,0,0,0.3)]">
+    <div className="lg:hidden fixed bottom-0 left-0 w-full bg-[#FFFDF5] border-t border-rose-100 px-2 py-4 z-40 flex justify-around items-center shadow-[0_-10px_30px_rgba(225,29,72,0.05)]">
       {navItems.map((item) => {
         const isActive = pathname === item.href;
         return (
           <Link 
             key={item.label}
             href={item.href}
-            className={`flex flex-col items-center gap-1.5 transition-all
-              ${isActive ? "text-purple-600 scale-110" : "text-slate-400"}
-            `}
+            className="flex flex-col items-center gap-1 transition-all relative"
           >
-            <div className={`p-1.5 rounded-xl transition-all ${isActive ? "bg-[#22c55e]/10 shadow-sm" : ""}`}>
+            {/* Icon Color: Rose Red on Buttery White */}
+            <div className={`p-2 rounded-2xl transition-all ${isActive ? "bg-[#E11D48] text-white shadow-lg shadow-rose-200" : "text-slate-400"}`}>
               {item.icon}
             </div>
-            <span className={`text-[8px] font-black uppercase tracking-widest ${isActive ? "opacity-100" : "opacity-60"}`}>
+            
+            {/* Text Label */}
+            <span className={`text-[10px] font-black uppercase tracking-widest mt-1 ${isActive ? "text-[#E11D48]" : "text-slate-400"}`}>
               {item.label}
             </span>
+
+            {/* Simple Dot for Active State */}
+            {isActive && (
+              <div className="absolute -bottom-2 w-1.5 h-1.5 bg-[#E11D48] rounded-full" />
+            )}
           </Link>
         );
       })}

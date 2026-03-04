@@ -10,7 +10,7 @@ export default function ClientDepositActions({ depositId }: { depositId: string 
   const router = useRouter();
 
   const handleApprove = async () => {
-    if (!confirm("Are you sure you want to approve this deposit? This will add the balance to the user's account.")) return;
+    if (!confirm("Kya aap waqai ye deposit approve karna chahte hain? Is se user ke account mein paise add ho jayeinge.")) return;
     
     setLoading(true);
     const promise = fetch("/api/admin/deposit/approve", {
@@ -20,16 +20,16 @@ export default function ClientDepositActions({ depositId }: { depositId: string 
     });
 
     toast.promise(promise, {
-      loading: 'Approving deposit...',
+      loading: 'Paisa add ho raha hai...',
       success: async (res: Response) => {
         if (!res.ok) {
            const err = await res.json();
-           throw new Error(err.error || "Authorization failed");
+           throw new Error(err.error || "Kuch ghalti hui hai");
         }
         router.refresh();
-        return 'Deposit approved successfully';
+        return 'Deposit kamyabi se approve ho gaya';
       },
-      error: (err: any) => err.message || 'Approval failed. Check logs.',
+      error: (err: any) => err.message || 'Approve nahi ho saka. Dubara check karein.',
     });
 
     try {
@@ -42,19 +42,24 @@ export default function ClientDepositActions({ depositId }: { depositId: string 
   };
 
   return (
-    <div className="flex justify-end gap-2">
+    <div className="flex justify-end gap-3">
+      {/* Approve Button - Green Rose Style */}
       <button 
         onClick={handleApprove} 
         disabled={loading}
-        className="bg-emerald-600/10 text-emerald-500 p-3 rounded-xl hover:bg-emerald-600 hover:text-white transition-all active:scale-90 disabled:opacity-50"
+        className="bg-emerald-50 text-emerald-600 p-4 rounded-2xl border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all active:scale-90 disabled:opacity-50 shadow-sm"
+        title="Approve Karein"
       >
-        <Check size={18}/>
+        <Check size={20} strokeWidth={3}/>
       </button>
+
+      {/* Reject Button - Red Rose Style */}
       <button 
         disabled={loading}
-        className="bg-red-600/10 text-red-500 p-3 rounded-xl hover:bg-red-600 hover:text-white transition-all active:scale-90 disabled:opacity-50"
+        className="bg-rose-50 text-[#E11D48] p-4 rounded-2xl border border-rose-100 hover:bg-[#E11D48] hover:text-white transition-all active:scale-90 disabled:opacity-50 shadow-sm"
+        title="Reject Karein"
       >
-        <X size={18}/>
+        <X size={20} strokeWidth={3}/>
       </button>
     </div>
   );
