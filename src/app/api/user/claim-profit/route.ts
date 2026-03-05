@@ -13,6 +13,7 @@ export async function POST(req: Request) {
     const { depositId } = await req.json();
     const userId = (session.user as any).id;
 
+    // Fetch deposit and ensure it belongs to the user
     const deposit = await db.deposit.findUnique({
       where: { id: depositId },
     }) as any;
@@ -30,6 +31,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No profit available yet" }, { status: 400 });
     }
 
+    // Using ROI from deposit model
     const roiValue = deposit.roi || 0;
     const dailyProfit = deposit.amount * (roiValue / 100);
     const totalClaimAmount = dailyProfit * pendingDays;
@@ -56,6 +58,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, amount: totalClaimAmount, claimedDays: pendingDays });
   } catch (error) {
+    console.error("Claim Error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
