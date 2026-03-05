@@ -1,6 +1,6 @@
 "use client";
 
-import { Zap, Trophy, Crown, ArrowRight, X, Loader2, CheckCircle2, History, Calendar } from "lucide-react";
+import { Zap, Trophy, Crown, ArrowRight, X, Loader2, CheckCircle2, History, Calendar, Clock } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const iconMap: Record<string, any> = {
@@ -16,12 +16,13 @@ export default function PlansPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
+  const [claimingId, setClaimingId] = useState<string | null>(null); // For claim loader
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPlans();
-    fetchUserDashboardData(); // Dashboard API sync
+    fetchUserDashboardData();
   }, []);
 
   const fetchPlans = async () => {
@@ -32,17 +33,37 @@ export default function PlansPage() {
     } catch (err) { console.error(err); }
   };
 
-  // Logic to sync with Dashboard API
   const fetchUserDashboardData = async () => {
     try {
       const res = await fetch('/api/user/dashboard', { cache: "no-store" });
       const data = await res.json();
-      // Dashboard code ke mutabiq 'activePlans' array use kar rahe hain
       if (!data.error && data.activePlans) {
         setUserPlans(data.activePlans);
       }
-    } catch (err) { 
-      console.error("Sync Error:", err); 
+    } catch (err) { console.error("Sync Error:", err); }
+  };
+
+  // ✅ NEW: Handle Profit Claiming
+  const handleClaim = async (depositId: string) => {
+    setClaimingId(depositId);
+    try {
+      const res = await fetch("/api/invest/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ depositId })
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        alert(`Success! Rs. ${data.amount} added to balance.`);
+        fetchUserDashboardData(); // Refresh data to reset timer
+      } else {
+        alert(data.error || "Claim failed");
+      }
+    } catch (err) {
+      alert("Connection Error");
+    } finally {
+      setClaimingId(null);
     }
   };
 
@@ -68,7 +89,7 @@ export default function PlansPage() {
       
       if (res.ok) {
         setSuccess(true);
-        fetchUserDashboardData(); // Refresh count after buy
+        fetchUserDashboardData();
         setTimeout(() => { 
           setSuccess(false); 
           setSelectedPlan(null); 
@@ -85,8 +106,7 @@ export default function PlansPage() {
     <div className="bg-[#F8FAFC] min-h-screen p-4 md:p-10 pt-24 font-sans text-[#1E293B]">
       
       <div className="max-w-6xl mx-auto">
-        
-        {/* TOP BAR - View Plans / Active Plans Button */}
+        {/* TOP BAR */}
         <div className="mb-12 bg-white p-6 md:p-8 rounded-[2.5rem] shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-center md:text-left">
             <h1 className="text-3xl font-black text-[#0F172A] uppercase italic leading-none">
@@ -95,7 +115,6 @@ export default function PlansPage() {
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">Select a package to start earning daily profit</p>
           </div>
 
-          {/* This button opens the "My Portfolio" Drawer */}
           <button 
             onClick={() => setIsDrawerOpen(true)}
             className="flex items-center gap-4 bg-gray-50 hover:bg-white hover:shadow-xl hover:border-red-100 border border-transparent transition-all px-6 py-4 rounded-[1.8rem] group relative active:scale-95"
@@ -137,8 +156,8 @@ export default function PlansPage() {
 
       {/* MY PLANS SIDE DRAWER */}
       <div className={`fixed inset-0 z-[400] transition-opacity duration-300 ${isDrawerOpen ? "opacity-100 visible" : "opacity-0 invisible"}`}>
-         <div className="absolute inset-0 bg-[#0F172A]/40 backdrop-blur-sm" onClick={() => setIsDrawerOpen(false)} />
-         <div className={`absolute top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl transform transition-transform duration-500 ease-out flex flex-col ${isDrawerOpen ? "translate-x-0" : "translate-x-full"}`}>
+          <div className="absolute inset-0 bg-[#0F172A]/40 backdrop-blur-sm" onClick={() => setIsDrawerOpen(false)} />
+          <div className={`absolute top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl transform transition-transform duration-500 ease-out flex flex-col ${isDrawerOpen ? "translate-x-0" : "translate-x-full"}`}>
             <div className="p-8 border-b border-gray-50 flex justify-between items-center">
                 <div>
                     <h2 className="text-xl font-black text-[#0F172A] uppercase italic">My <span className="text-[#E11D48]">Portfolio</span></h2>
@@ -158,7 +177,13 @@ export default function PlansPage() {
                         <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No Active Plans Found</p>
                     </div>
                 ) : (
-                    userPlans.map((up, idx) => (
+                    userPlans.map((up, idx) => {
+                      // 🕒 TIMER LOGIC: Check if 24 hours passed since lastClaimedAt or createdAt
+                      const lastClaim = up.lastClaimedAt ? new Date(up.lastClaimedAt) : new Date(up.createdAt);
+                      const nextClaimDate = new Date(lastClaim.getTime() + 24 * 60 * 60 * 1000);
+                      const isEligible = new Date() >= nextClaimDate;
+
+                      return (
                         <div key={idx} className="bg-gray-50 border border-gray-100 rounded-[2rem] p-6 group hover:border-[#E11D48]/20 transition-all shadow-sm">
                             <div className="flex justify-between items-start mb-4">
                                 <div className="bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100 font-black text-[#E11D48] text-xs">
@@ -169,9 +194,30 @@ export default function PlansPage() {
                                 </span>
                             </div>
                             <h4 className="text-lg font-black text-[#0F172A] uppercase mb-1">{up.planName || "Investment"}</h4>
-                            <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase mb-4">
-                                <Calendar size={12} className="text-[#E11D48]" /> Started: {new Date(up.createdAt).toLocaleDateString()}
+                            
+                            {/* Claim Button / Timer Logic */}
+                            <div className="mt-2 mb-4">
+                              {isEligible ? (
+                                <button 
+                                  disabled={claimingId === up.id}
+                                  onClick={() => handleClaim(up.id)}
+                                  className="w-full py-3 bg-[#0F172A] text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#E11D48] transition-all flex items-center justify-center gap-2"
+                                >
+                                  {claimingId === up.id ? <Loader2 className="animate-spin" size={12}/> : <Zap size={12} fill="currentColor"/>}
+                                  {claimingId === up.id ? "Processing..." : "Claim Daily Profit"}
+                                </button>
+                              ) : (
+                                <div className="flex items-center justify-between px-4 py-3 bg-white border border-gray-100 rounded-xl">
+                                  <span className="text-[9px] font-bold text-gray-400 uppercase flex items-center gap-1">
+                                    <Clock size={12} className="text-[#E11D48]"/> Next Claim:
+                                  </span>
+                                  <span className="text-[10px] font-black text-[#0F172A]">
+                                    {nextClaimDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                              )}
                             </div>
+
                             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white">
                                 <div>
                                     <p className="text-[8px] font-black text-gray-400 uppercase mb-1 tracking-widest">Invested</p>
@@ -183,42 +229,43 @@ export default function PlansPage() {
                                 </div>
                             </div>
                         </div>
-                    ))
+                      )
+                    })
                 )}
             </div>
-         </div>
+          </div>
       </div>
 
       {/* PURCHASE MODAL */}
       {selectedPlan && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-[#0F172A]/80 backdrop-blur-md">
-           <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 relative animate-in zoom-in-95 shadow-2xl">
-             <button onClick={() => {setSelectedPlan(null); setError(null); setAmount("");}} className="absolute top-6 right-6 text-gray-300 hover:text-red-500">
+            <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 relative animate-in zoom-in-95 shadow-2xl">
+              <button onClick={() => {setSelectedPlan(null); setError(null); setAmount("");}} className="absolute top-6 right-6 text-gray-300 hover:text-red-500">
                 <X size={20} />
-             </button>
-             <div className="text-center mb-6">
+              </button>
+              <div className="text-center mb-6">
                 <div className="mx-auto w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center mb-3">
                     {iconMap[selectedPlan.icon] || <Zap className="text-[#E11D48]" size={24} />}
                 </div>
                 <h3 className="text-xl font-black text-[#0F172A] uppercase italic leading-none">{selectedPlan.name}</h3>
                 <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-2">Investment Activation</p>
-             </div>
-             
-             {error && <div className="bg-rose-50 text-rose-600 text-[10px] font-black p-3 rounded-xl mb-4 border border-rose-100 text-center uppercase">{error}</div>}
-             
-             <div className="bg-gray-50 rounded-2xl p-4 mb-6 border border-gray-100 space-y-2 text-[10px] font-black uppercase">
+              </div>
+              
+              {error && <div className="bg-rose-50 text-rose-600 text-[10px] font-black p-3 rounded-xl mb-4 border border-rose-100 text-center uppercase">{error}</div>}
+              
+              <div className="bg-gray-50 rounded-2xl p-4 mb-6 border border-gray-100 space-y-2 text-[10px] font-black uppercase">
                 <div className="flex justify-between items-center"><span className="text-gray-400">Profit Rate</span><span className="text-[#E11D48]">{selectedPlan.roi}% Daily</span></div>
                 <div className="flex justify-between items-center"><span className="text-gray-400">Investment Range</span><span className="text-[#0F172A]">Rs.{selectedPlan.minAmount} - {selectedPlan.maxAmount}</span></div>
-             </div>
-             
-             <div className="space-y-4">
+              </div>
+              
+              <div className="space-y-4">
                 <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full bg-gray-50 border-2 border-gray-100 focus:border-[#E11D48] rounded-xl py-4 px-5 text-lg font-black outline-none transition-all placeholder:text-gray-200" placeholder="0.00" />
                 <button onClick={handlePurchase} disabled={loading || success} className={`w-full py-5 rounded-2xl font-black uppercase text-xs tracking-widest transition-all ${success ? "bg-green-500" : "bg-[#0F172A] hover:bg-black"} text-white shadow-xl active:scale-95 flex items-center justify-center gap-2`}>
-                   {loading ? <Loader2 className="animate-spin" size={16} /> : success ? <CheckCircle2 size={16} /> : null}
-                   {loading ? "Processing..." : success ? "Activated!" : "Confirm Investment"}
+                    {loading ? <Loader2 className="animate-spin" size={16} /> : success ? <CheckCircle2 size={16} /> : null}
+                    {loading ? "Processing..." : success ? "Activated!" : "Confirm Investment"}
                 </button>
-             </div>
-           </div>
+              </div>
+            </div>
         </div>
       )}
     </div>
