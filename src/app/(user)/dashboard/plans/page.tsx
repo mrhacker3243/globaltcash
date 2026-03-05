@@ -9,6 +9,40 @@ const iconMap: Record<string, any> = {
   Crown: <Crown className="text-[#E11D48]" size={22} />,
 };
 
+function CountdownTimer({ nextClaimTime, onZero }: { nextClaimTime: number; onZero?: () => void }) {
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+
+  useEffect(() => {
+    const updateTimer = () => {
+      const now = new Date().getTime();
+      const diff = nextClaimTime - now;
+      const newTimeLeft = Math.max(0, diff);
+      setTimeLeft(newTimeLeft);
+      if (newTimeLeft <= 0 && onZero) {
+        onZero();
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [nextClaimTime, onZero]);
+
+  const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+  const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+  if (timeLeft <= 0) {
+    return <div className="text-[10px] font-bold text-green-600 uppercase">Claim Available!</div>;
+  }
+
+  return (
+    <div className="text-[10px] font-bold text-gray-400 uppercase">
+      Next claim in: {hours.toString().padStart(2, '0')}:{minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}
+    </div>
+  );
+}
+
 export default function PlansPage() {
   const [plans, setPlans] = useState<any[]>([]);
   const [userPlans, setUserPlans] = useState<any[]>([]); 
@@ -56,6 +90,38 @@ export default function PlansPage() {
       }
     } catch (err) { alert("Error"); }
     finally { setClaimingId(null); }
+  };
+
+  const handlePurchase = async () => {
+    if (!amount || !selectedPlan) return;
+    
+    const numAmount = parseFloat(amount);
+    if (numAmount < selectedPlan.minAmount || numAmount > selectedPlan.maxAmount) {
+      alert(`Amount must be between Rs ${selectedPlan.minAmount} and Rs ${selectedPlan.maxAmount}`);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/plans/purchase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planName: selectedPlan.name, amount: numAmount })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("Plan purchased successfully!");
+        setSelectedPlan(null);
+        setAmount("");
+        fetchUserDashboardData();
+      } else {
+        alert(data.error || "Purchase failed");
+      }
+    } catch (err) {
+      alert("Error purchasing plan");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -115,12 +181,57 @@ export default function PlansPage() {
                         {claimingId === up.id ? "Claiming..." : `Claim Rs. ${(up.amount * up.roi/100 * pendingDays).toFixed(0)}`}
                       </button>
                     ) : (
-                      <div className="text-[10px] font-bold text-gray-400 flex items-center gap-1 uppercase"><Clock size={12}/> Next profit in less than 24h</div>
+                      <CountdownTimer nextClaimTime={lastClaim.getTime() + 24 * 60 * 60 * 1000} onZero={fetchUserDashboardData} />
                     )}
                   </div>
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Purchase Modal */}
+      {selectedPlan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSelectedPlan(null)} />
+          <div className="relative bg-white p-8 rounded-[2rem] shadow-2xl max-w-md w-full mx-4">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-black uppercase">Invest in <span className="text-[#E11D48]">{selectedPlan.name}</span></h2>
+              <X className="cursor-pointer" onClick={() => setSelectedPlan(null)} />
+            </div>
+            
+            <div className="mb-6">
+              <div className="bg-gray-50 w-16 h-16 rounded-2xl flex items-center justify-center mb-4">
+                {iconMap[selectedPlan.icon] || <Zap className="text-[#E11D48]" size={24} />}
+              </div>
+              <div className="flex items-baseline gap-1 mb-2">
+                <span className="text-3xl font-black">{selectedPlan.roi}%</span>
+                <span className="text-sm font-bold text-[#E11D48] uppercase">/ Day</span>
+              </div>
+              <p className="text-sm font-bold text-gray-400">MIN: Rs {selectedPlan.minAmount} | MAX: Rs {selectedPlan.maxAmount}</p>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-bold text-gray-700 mb-2">Investment Amount (Rs)</label>
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder={`Enter amount between ${selectedPlan.minAmount} - ${selectedPlan.maxAmount}`}
+                className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E11D48] focus:border-transparent"
+                min={selectedPlan.minAmount}
+                max={selectedPlan.maxAmount}
+              />
+            </div>
+
+            <button
+              onClick={handlePurchase}
+              disabled={loading || !amount}
+              className="w-full py-4 bg-[#0F172A] text-white rounded-xl font-black text-sm uppercase disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? "Processing..." : "Invest Now"}
+            </button>
           </div>
         </div>
       )}

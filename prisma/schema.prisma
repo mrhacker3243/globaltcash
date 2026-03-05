@@ -8,22 +8,22 @@ datasource db {
 }
 
 model User {
-  id              String       @id @default(cuid())
-  email           String       @unique
-  password        String
-  role            Role         @default(USER)
-  balance         Float        @default(0.0)
-  totalDeposit    Float        @default(0.0)
-  createdAt       DateTime     @default(now())
-  name            String?
-  walletAddress   String?
-  twoFactorSecret String?
-  isTwoFactorEnabled Boolean    @default(false)
-  deposits        Deposit[]
-  withdrawals     Withdrawal[]
-  referrerId      String?
-  referrer        User?        @relation("UserReferrals", fields: [referrerId], references: [id])
-  referredUsers   User[]       @relation("UserReferrals")
+  id                 String       @id @default(cuid())
+  email              String       @unique
+  password           String
+  role               Role         @default(USER)
+  balance            Float        @default(0.0)
+  createdAt          DateTime     @default(now())
+  name               String?
+  walletAddress      String?
+  twoFactorSecret    String?
+  isTwoFactorEnabled Boolean      @default(false)
+  referrerId         String?
+  totalDeposit       Float        @default(0.0)
+  deposits           Deposit[]
+  referrer           User?        @relation("UserReferrals", fields: [referrerId], references: [id])
+  referredUsers      User[]       @relation("UserReferrals")
+  withdrawals        Withdrawal[]
 }
 
 model SystemSetting {
@@ -42,25 +42,25 @@ model Deposit {
   id              String         @id @default(cuid())
   userId          String
   amount          Float
-  gateway         String?        
+  gateway         String?
   planName        String?        @default("Manual Deposit")
-  transactionId   String?        @unique 
-  transactionHash String?        @unique 
-  slipImage       String?        
+  transactionId   String?        @unique
+  transactionHash String?        @unique
+  slipImage       String?
   status          DepositStatus  @default(PENDING)
   createdAt       DateTime       @default(now())
   lastClaimedAt   DateTime       @default(now())
-  profitRecords   ProfitRecord[] 
   user            User           @relation(fields: [userId], references: [id])
+  profitRecords   ProfitRecord[]
 }
 
 model ProfitRecord {
-  id          String   @id @default(cuid())
-  depositId   String
-  amount      Float
-  status      String   @default("PENDING")
-  createdAt   DateTime @default(now())
-  deposit     Deposit  @relation(fields: [depositId], references: [id])
+  id        String   @id @default(cuid())
+  depositId String
+  amount    Float
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  deposit   Deposit  @relation(fields: [depositId], references: [id])
 }
 
 model Withdrawal {
@@ -71,6 +71,20 @@ model Withdrawal {
   userId    String
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id])
+}
+
+model Plan {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  minAmount Float
+  maxAmount Float
+  roi       Float
+  duration  String
+  icon      String?  @default("Zap")
+  popular   Boolean  @default(false)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum Role {
@@ -90,18 +104,4 @@ enum DepositStatus {
   APPROVED
   REJECTED
   ACTIVE
-}
-
-model Plan {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  minAmount   Float
-  maxAmount   Float
-  roi         Float    
-  duration    String   
-  icon        String?  @default("Zap")
-  popular     Boolean  @default(false)
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }

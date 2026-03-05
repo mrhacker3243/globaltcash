@@ -35,13 +35,37 @@ export async function GET() {
         d.planName !== "Manual Deposit"
     );
 
+    // Fetch all plans to enrich activePlans
+    const plans = await db.plan.findMany();
+
+    // Enrich activePlans with plan details
+    const enrichedActivePlans = activePlans.map(dep => {
+      const plan = plans.find(p => p.name === dep.planName);
+      return { ...dep, plan, roi: plan?.roi };
+    });
+
+    // Calculate total pending claims
+    let totalPendingClaims = 0;
+    let totalPendingCount = 0;
+    enrichedActivePlans.forEach((dep: any) => {
+      const lastClaim = dep.lastClaimedAt ? new Date(dep.lastClaimedAt) : new Date(dep.createdAt);
+      const pendingDays = Math.floor((new Date().getTime() - lastClaim.getTime()) / (1000 * 60 * 60 * 24));
+      if (pendingDays >= 1 && dep.roi) {
+        const dailyProfit = dep.amount * (dep.roi / 100);
+        totalPendingClaims += dailyProfit * pendingDays;
+        totalPendingCount += 1;
+      }
+    });
+
     return NextResponse.json({
       name: user.name,
       email: user.email,
       balance: user.balance || 0,
       deposits: user.deposits || [],
       withdrawals: user.withdrawals || [],
-      activePlans
+      activePlans: enrichedActivePlans,
+      totalPendingClaims,
+      totalPendingCount
     });
 
   } catch (error) {

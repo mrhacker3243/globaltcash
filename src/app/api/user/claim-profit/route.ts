@@ -22,6 +22,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Active deposit not found" }, { status: 400 });
     }
 
+    // Fetch the plan to get ROI
+    const plan = await db.plan.findUnique({
+      where: { name: deposit.planName }
+    });
+
+    if (!plan) {
+      return NextResponse.json({ error: "Plan not found" }, { status: 400 });
+    }
+
     const now = new Date();
     const lastClaim = deposit.lastClaimedAt || deposit.createdAt;
     const diffInMs = now.getTime() - lastClaim.getTime();
@@ -31,8 +40,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No profit available yet" }, { status: 400 });
     }
 
-    // Using ROI from deposit model
-    const roiValue = deposit.roi || 0;
+    // Using ROI from plan
+    const roiValue = plan.roi;
     const dailyProfit = deposit.amount * (roiValue / 100);
     const totalClaimAmount = dailyProfit * pendingDays;
 
