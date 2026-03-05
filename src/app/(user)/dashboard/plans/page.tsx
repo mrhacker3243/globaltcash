@@ -45,7 +45,9 @@ function CountdownTimer({ nextClaimTime, onZero }: { nextClaimTime: number; onZe
 
 export default function PlansPage() {
   const [plans, setPlans] = useState<any[]>([]);
-  const [userPlans, setUserPlans] = useState<any[]>([]); 
+  const [userPlans, setUserPlans] = useState<any[]>([]);
+  const [totalClaimed, setTotalClaimed] = useState<number>(0);
+  const [totalPending, setTotalPending] = useState<number>(0);
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [amount, setAmount] = useState("");
@@ -69,7 +71,18 @@ export default function PlansPage() {
     try {
       const res = await fetch('/api/user/dashboard');
       const data = await res.json();
-      if (data.activePlans) setUserPlans(data.activePlans);
+      if (data.activePlans) {
+        setUserPlans(data.activePlans);
+        // compute overall totals
+        let claimedSum = 0;
+        let pendingSum = 0;
+        data.activePlans.forEach((p: any) => {
+          claimedSum += p.claimedAmount || 0;
+          pendingSum += p.pendingAmount || 0;
+        });
+        setTotalClaimed(claimedSum);
+        setTotalPending(pendingSum);
+      }
     } catch (err) { console.error("Sync Error:", err); }
   };
 
@@ -165,9 +178,16 @@ export default function PlansPage() {
               <h2 className="text-xl font-black uppercase">My <span className="text-[#E11D48]">Portfolio</span></h2>
               <X className="cursor-pointer" onClick={() => setIsDrawerOpen(false)} />
             </div>
+            <div className="mb-4 text-[12px] font-bold">
+              Total Claimed: Rs. {totalClaimed.toFixed(0)} | Total Pending: Rs. {totalPending.toFixed(0)}
+            </div>
             {userPlans.map((up, idx) => {
               const lastClaim = up.lastClaimedAt ? new Date(up.lastClaimedAt) : new Date(up.createdAt);
-              const pendingDays = Math.floor((new Date().getTime() - lastClaim.getTime()) / (1000 * 60 * 60 * 24));
+              const pendingDays = up.pendingDays ?? Math.floor((new Date().getTime() - lastClaim.getTime()) / (1000 * 60 * 60 * 24));
+              const claimedAmt = up.claimedAmount || 0;
+              const pendingAmt = up.pendingAmount || 0;
+              const totalAvailable = claimedAmt + pendingAmt;
+              const percentClaimed = totalAvailable > 0 ? (claimedAmt / totalAvailable) * 100 : 0;
               return (
                 <div key={idx} className="bg-gray-50 p-6 rounded-3xl mb-4 border border-gray-100">
                   <div className="flex justify-between mb-2">
@@ -175,10 +195,17 @@ export default function PlansPage() {
                     {pendingDays >= 1 && <span className="text-[9px] font-black bg-red-500 text-white px-2 py-1 rounded-full">{pendingDays} Days Pending</span>}
                   </div>
                   <h4 className="text-lg font-black italic">Rs. {up.amount}</h4>
+                  <div className="text-[10px] mt-2">
+                    <div>Claimed: Rs. {claimedAmt.toFixed(0)}</div>
+                    <div>Pending: Rs. {pendingAmt.toFixed(0)}</div>
+                    {totalAvailable > 0 && (
+                      <div>Progress: {percentClaimed.toFixed(1)}%</div>
+                    )}
+                  </div>
                   <div className="mt-4">
                     {pendingDays >= 1 ? (
                       <button onClick={() => handleClaim(up.id)} disabled={claimingId === up.id} className="w-full py-3 bg-[#0F172A] text-white rounded-xl font-black text-[10px] uppercase">
-                        {claimingId === up.id ? "Claiming..." : `Claim Rs. ${(up.amount * up.roi/100 * pendingDays).toFixed(0)}`}
+                        {claimingId === up.id ? "Claiming..." : `Claim Rs. ${pendingAmt.toFixed(0)}`}
                       </button>
                     ) : (
                       <CountdownTimer nextClaimTime={lastClaim.getTime() + 24 * 60 * 60 * 1000} onZero={fetchUserDashboardData} />

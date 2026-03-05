@@ -38,10 +38,22 @@ export async function GET() {
     // Fetch all plans to enrich activePlans
     const plans = await db.plan.findMany();
 
-    // Enrich activePlans with plan details
+    // Enrich activePlans with plan details and calculate claim stats
     const enrichedActivePlans = activePlans.map(dep => {
       const plan = plans.find(p => p.name === dep.planName);
-      return { ...dep, plan, roi: plan?.roi };
+      const roi = plan?.roi;
+
+      // calculate already claimed amount
+      const claimedAmount = dep.profitRecords
+        .filter(pr => pr.status === "COMPLETED")
+        .reduce((sum, pr) => sum + pr.amount, 0);
+
+      // calculate pending days/amount based on roi
+      const lastClaim = dep.lastClaimedAt ? new Date(dep.lastClaimedAt) : new Date(dep.createdAt);
+      const pendingDays = Math.floor((new Date().getTime() - lastClaim.getTime()) / (1000 * 60 * 60 * 24));
+      const pendingAmount = roi && pendingDays >= 1 ? dep.amount * (roi / 100) * pendingDays : 0;
+
+      return { ...dep, plan, roi, claimedAmount, pendingAmount, pendingDays };
     });
 
     // Calculate total pending claims
@@ -52,6 +64,7 @@ export async function GET() {
       const pendingDays = Math.floor((new Date().getTime() - lastClaim.getTime()) / (1000 * 60 * 60 * 24));
       if (pendingDays >= 1 && dep.roi) {
         const dailyProfit = dep.amount * (dep.roi / 100);
+        dep.pendingAmount = dailyProfit * pendingDays; // update pending amount in object
         totalPendingClaims += dailyProfit * pendingDays;
         totalPendingCount += 1;
       }
