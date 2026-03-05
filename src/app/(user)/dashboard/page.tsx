@@ -104,7 +104,7 @@ const UserDashboard = () => {
 
           <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 group">
             <CreditCard className="text-[#E11D48] mb-4 opacity-40 group-hover:opacity-100 transition-opacity" size={20} />
-            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Withdrawn</p>
+            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Withdraw</p>
             <h2 className="text-xl font-black text-[#0F172A]">Rs. {totalWithdrawn.toLocaleString()}</h2>
           </div>
 
