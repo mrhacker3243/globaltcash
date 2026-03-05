@@ -13,12 +13,15 @@ export async function POST(req: Request) {
     const { depositId } = await req.json();
     const userId = (session.user as any).id;
 
-    // 1. Get Deposit and Plan Details
+    // 1. Get Deposit and Include Plan to get ROI
     const deposit = await db.deposit.findUnique({
       where: { id: depositId },
-      include: { user: true }
+      include: { 
+        plan: true // ✅ Plan ko include kiya taake roi mil sakay
+      }
     });
 
+    // Check if deposit exists and belongs to user
     if (!deposit || deposit.userId !== userId || deposit.status !== "ACTIVE") {
       return NextResponse.json({ error: "Active deposit not found" }, { status: 400 });
     }
@@ -33,9 +36,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No profit available to claim yet" }, { status: 400 });
     }
 
-    // 3. Calculate Total Profit (Daily ROI * Pending Days)
-    // Assume ROI is stored in the deposit or fetched from plan
-    const dailyProfit = deposit.amount * (deposit.roi / 100);
+    // 3. Calculate Total Profit 
+    // ✅ Yahan hum deposit.plan.roi use karenge kyunki roi Plan model mein hota hai
+    const roi = (deposit as any).roi || deposit.plan.roi; 
+    const dailyProfit = deposit.amount * (roi / 100);
     const totalClaimAmount = dailyProfit * pendingDays;
 
     // 4. Atomic Transaction
@@ -45,15 +49,14 @@ export async function POST(req: Request) {
         where: { id: userId },
         data: { balance: { increment: totalClaimAmount } }
       }),
-      // Update Deposit Timestamp (Resetting based on days claimed)
-      // Hum exact days ka difference set karenge taake remaining hours zaya na hon
+      // Update Deposit Timestamp
       db.deposit.update({
         where: { id: depositId },
         data: { 
           lastClaimedAt: new Date(lastClaim.getTime() + pendingDays * 24 * 60 * 60 * 1000) 
         }
       }),
-      // Create a record for History
+      // Create History Record
       db.profitRecord.create({
         data: {
           depositId: deposit.id,
@@ -67,11 +70,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ 
       success: true, 
       amount: totalClaimAmount, 
-      days: pendingDays 
+      claimedDays: pendingDays 
     });
 
   } catch (error) {
-    console.error("Multi-Claim Error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    console.error("Claim Error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
