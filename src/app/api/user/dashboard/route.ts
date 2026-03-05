@@ -47,10 +47,10 @@ export async function GET() {
     // Calculate total pending claims
     let totalPendingClaims = 0;
     let totalPendingCount = 0;
-    activePlans.forEach(dep => {
+    enrichedActivePlans.forEach((dep: any) => {
       const lastClaim = dep.lastClaimedAt ? new Date(dep.lastClaimedAt) : new Date(dep.createdAt);
       const pendingDays = Math.floor((new Date().getTime() - lastClaim.getTime()) / (1000 * 60 * 60 * 24));
-      if (pendingDays >= 1) {
+      if (pendingDays >= 1 && dep.roi) {
         const dailyProfit = dep.amount * (dep.roi / 100);
         totalPendingClaims += dailyProfit * pendingDays;
         totalPendingCount += 1;

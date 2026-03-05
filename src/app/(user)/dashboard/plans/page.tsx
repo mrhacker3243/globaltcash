@@ -92,6 +92,38 @@ export default function PlansPage() {
     finally { setClaimingId(null); }
   };
 
+  const handlePurchase = async () => {
+    if (!amount || !selectedPlan) return;
+    
+    const numAmount = parseFloat(amount);
+    if (numAmount < selectedPlan.minAmount || numAmount > selectedPlan.maxAmount) {
+      alert(`Amount must be between Rs ${selectedPlan.minAmount} and Rs ${selectedPlan.maxAmount}`);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/plans/purchase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planName: selectedPlan.name, amount: numAmount })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("Plan purchased successfully!");
+        setSelectedPlan(null);
+        setAmount("");
+        fetchUserDashboardData();
+      } else {
+        alert(data.error || "Purchase failed");
+      }
+    } catch (err) {
+      alert("Error purchasing plan");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="bg-[#F8FAFC] min-h-screen p-4 pt-24">
       <div className="max-w-6xl mx-auto">
@@ -155,6 +187,51 @@ export default function PlansPage() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Purchase Modal */}
+      {selectedPlan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSelectedPlan(null)} />
+          <div className="relative bg-white p-8 rounded-[2rem] shadow-2xl max-w-md w-full mx-4">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-black uppercase">Invest in <span className="text-[#E11D48]">{selectedPlan.name}</span></h2>
+              <X className="cursor-pointer" onClick={() => setSelectedPlan(null)} />
+            </div>
+            
+            <div className="mb-6">
+              <div className="bg-gray-50 w-16 h-16 rounded-2xl flex items-center justify-center mb-4">
+                {iconMap[selectedPlan.icon] || <Zap className="text-[#E11D48]" size={24} />}
+              </div>
+              <div className="flex items-baseline gap-1 mb-2">
+                <span className="text-3xl font-black">{selectedPlan.roi}%</span>
+                <span className="text-sm font-bold text-[#E11D48] uppercase">/ Day</span>
+              </div>
+              <p className="text-sm font-bold text-gray-400">MIN: Rs {selectedPlan.minAmount} | MAX: Rs {selectedPlan.maxAmount}</p>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-bold text-gray-700 mb-2">Investment Amount (Rs)</label>
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder={`Enter amount between ${selectedPlan.minAmount} - ${selectedPlan.maxAmount}`}
+                className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E11D48] focus:border-transparent"
+                min={selectedPlan.minAmount}
+                max={selectedPlan.maxAmount}
+              />
+            </div>
+
+            <button
+              onClick={handlePurchase}
+              disabled={loading || !amount}
+              className="w-full py-4 bg-[#0F172A] text-white rounded-xl font-black text-sm uppercase disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? "Processing..." : "Invest Now"}
+            </button>
           </div>
         </div>
       )}
