@@ -16,7 +16,10 @@ export async function GET() {
       where: { id: userId },
       include: {
         deposits: {
-          orderBy: { createdAt: "desc" }
+          orderBy: { createdAt: "desc" },
+          include: {
+            profitRecords: true
+          }
         },
         withdrawals: {
           orderBy: { createdAt: "desc" }
