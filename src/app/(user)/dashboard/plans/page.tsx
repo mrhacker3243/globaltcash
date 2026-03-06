@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 
-// FIX: Storing Component Reference to avoid "at constructor" error
+// Icon mapping to prevent hydration errors with dynamic components
 const iconMap: Record<string, any> = {
   Zap: Zap,
   Trophy: Trophy,
@@ -22,9 +22,12 @@ function CountdownTimer({ nextClaimTime, onZero }: { nextClaimTime: number; onZe
       const diff = nextClaimTime - now;
       const newTimeLeft = Math.max(0, diff);
       setTimeLeft(newTimeLeft);
+      
       if (newTimeLeft > 0) {
         timeoutId = setTimeout(updateTimer, 1000);
-      } else if (onZero) { onZero(); }
+      } else if (onZero) { 
+        onZero(); 
+      }
     };
     updateTimer();
     return () => { if (timeoutId) clearTimeout(timeoutId); };
@@ -80,7 +83,8 @@ export default function PlansPage() {
           cSum += p.claimedAmount || 0;
           pSum += p.pendingAmount || 0;
         });
-        setTotalClaimed(cSum); setTotalPending(pSum);
+        setTotalClaimed(cSum); 
+        setTotalPending(pSum);
       }
     } catch (err) { console.error(err); }
   };
@@ -109,9 +113,12 @@ export default function PlansPage() {
         body: JSON.stringify({ planName: selectedPlan.name, amount: parseFloat(amount) })
       });
       if (res.ok) {
-        setSelectedPlan(null); setAmount(""); fetchUserDashboardData();
+        setSelectedPlan(null); 
+        setAmount(""); 
+        fetchUserDashboardData();
       } else {
-        const d = await res.json(); alert(d.error);
+        const d = await res.json(); 
+        alert(d.error);
       }
     } catch (err) { alert("Error"); }
     finally { setLoading(false); }
@@ -183,7 +190,7 @@ export default function PlansPage() {
       {isDrawerOpen && (
         <div className="fixed inset-0 z-[100] flex justify-end">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setIsDrawerOpen(false)} />
-          <div className="relative w-full max-w-[320px] md:max-w-md bg-white h-full p-6 md:p-10 shadow-2xl overflow-y-auto animate-in slide-in-from-right duration-300">
+          <div className="relative w-full max-w-[320px] md:max-w-md bg-white h-full p-6 md:p-10 shadow-2xl overflow-y-auto">
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-lg font-black uppercase italic">Active <span className="text-[#E11D48]">Plans</span></h2>
               <button onClick={() => setIsDrawerOpen(false)}><X size={20} className="text-slate-300" /></button>
