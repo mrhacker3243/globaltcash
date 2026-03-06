@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
+import { getCommissionPercentForRank } from "@/lib/rankManager";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
@@ -14,6 +15,13 @@ export async function GET() {
         referralCount: true,
         rankLevel: true,
         milestoneProgress: true,
+        referrer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          }
+        }
       }
     });
 
@@ -24,8 +32,11 @@ export async function GET() {
       orderBy: { targetSales: 'asc' }
     });
 
+    const commissionRate = await getCommissionPercentForRank(user.rankLevel);
+
     return NextResponse.json({
       user: user,
+      commissionRate,
       rewards: rewards
     });
   } catch (error) {

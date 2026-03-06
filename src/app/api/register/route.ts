@@ -4,7 +4,8 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const { email, password, name, referrerId } = await req.json();
+    const { email, password, name, referrerId, referralCode } = await req.json();
+  const resolvedReferrerId = referrerId || referralCode;
 
     if (!email || !password) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
@@ -26,8 +27,8 @@ export async function POST(req: Request) {
     const deviceFingerprint = req.headers.get('user-agent') || '';
 
     // 4. Validate referrer if provided
-    if (referrerId) {
-      const referrer = await db.user.findUnique({ where: { id: referrerId } });
+    if (resolvedReferrerId) {
+      const referrer = await db.user.findUnique({ where: { id: resolvedReferrerId } });
       if (!referrer) {
         return NextResponse.json({ error: "Invalid referrer" }, { status: 400 });
       }
@@ -41,7 +42,7 @@ export async function POST(req: Request) {
         password: hashedPassword,
         role: "USER", // Default role for signup
         balance: 0,
-        referrerId,
+        referrerId: resolvedReferrerId,
         ipAddress,
         deviceFingerprint,
       }

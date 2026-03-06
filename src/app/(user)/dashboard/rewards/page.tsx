@@ -16,6 +16,11 @@ interface UserRewards {
   referralCount: number;
   rankLevel: string;
   milestoneProgress: number;
+  referrer?: {
+    id: string;
+    name?: string | null;
+    email: string;
+  };
 }
 
 interface ReferralHistory {
@@ -30,6 +35,7 @@ interface ReferralHistory {
 
 export default function RewardsPage() {
   const [userRewards, setUserRewards] = useState<UserRewards | null>(null);
+  const [commissionRate, setCommissionRate] = useState<number | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [referralHistory, setReferralHistory] = useState<ReferralHistory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,6 +52,7 @@ export default function RewardsPage() {
       const res = await fetch("/api/user/rewards");
       const data = await res.json();
       if (data.user) setUserRewards(data.user);
+      if (typeof data.commissionRate === 'number') setCommissionRate(data.commissionRate);
       if (data.rewards) setRewards(data.rewards);
     } catch (err) {
       console.error("Rewards Fetch Error:", err);
@@ -166,6 +173,27 @@ export default function RewardsPage() {
               </div>
             </div>
           </div>
+
+          {/* Sponsor & Commission */}
+          {(userRewards?.referrer || commissionRate !== null) && (
+            <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between gap-6">
+              <div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Your Sponsor</p>
+                {userRewards?.referrer ? (
+                  <p className="text-lg font-black text-[#0F172A]">{userRewards.referrer.name || userRewards.referrer.email}</p>
+                ) : (
+                  <p className="text-sm font-black text-gray-500">You don't have a sponsor yet. Share your referral link to invite someone.</p>
+                )}
+              </div>
+
+              {commissionRate !== null && (
+                <div className="text-right">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Your Commission Rate</p>
+                  <p className="text-3xl font-black text-[#E11D48]">{(commissionRate * 100).toFixed(2)}%</p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* NEXT MILESTONE - FOCUS CARD */}
           {nextReward && (

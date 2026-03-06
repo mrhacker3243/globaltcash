@@ -19,6 +19,11 @@ export default async function ReferralsPage() {
     },
   });
 
+  const rank = await db.referralRank.findUnique({
+    where: { name: user?.rankLevel || "Starter" },
+  });
+  const commissionRate = rank?.commissionPercent ?? 0.05;
+
   if (!user) return <div className="text-white p-10 font-bold text-center">Identity Not Found</div>;
 
   const referralLink = `${process.env.NEXTAUTH_URL || 'https://globaltrust.cash'}/register?ref=${user.id}`;
@@ -34,7 +39,7 @@ export default async function ReferralsPage() {
             Referral<span className="text-[#E11D48]">Network</span>
             </h1>
             <p className="text-[#6B7280] text-[10px] font-black uppercase tracking-[0.4em] mt-2">
-              Scale your team • Earn 10% instant commission
+              Scale your team • Earn {(commissionRate * 100).toFixed(2)}% instant commission
             </p>
           </div>
           <div className="bg-white px-5 py-2 rounded-2xl shadow-sm border border-[#E5E7EB] flex items-center gap-2 w-fit">
@@ -108,10 +113,13 @@ export default async function ReferralsPage() {
                   <div className="px-2">
                      <div className="flex justify-between items-center mb-4">
                         <span className="text-[10px] font-black text-[#111827] uppercase tracking-widest">Commission Rate</span>
-                        <span className="text-[#E11D48] text-xs font-black italic">10.00%</span>
+                        <span className="text-[#E11D48] text-xs font-black italic">{(commissionRate * 100).toFixed(2)}%</span>
                      </div>
                      <div className="w-full h-3 bg-[#F3F4F6] rounded-full overflow-hidden p-1 border border-[#E5E7EB]">
-                        <div className="h-full bg-gradient-to-r from-[#E11D48] to-[#BE123C] w-[15%] rounded-full shadow-[0_0_10px_rgba(225,29,72,0.4)]" />
+                        <div
+                          className="h-full bg-gradient-to-r from-[#E11D48] to-[#BE123C] rounded-full shadow-[0_0_10px_rgba(225,29,72,0.4)]"
+                          style={{ width: `${Math.min(100, commissionRate * 100)}%` }}
+                        />
                      </div>
                   </div>
                 </div>

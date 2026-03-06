@@ -16,8 +16,18 @@ export default function AdminSettings() {
     maintenanceMode: false,
   });
 
+  const [referralRanks, setReferralRanks] = useState<any[]>([]);
+  const [newRank, setNewRank] = useState({
+    name: "",
+    commissionPercent: 0.05,
+    minTeamVolume: 0,
+    minActiveReferrals: 0,
+    active: true,
+  });
+
   useEffect(() => {
     fetchSettings();
+    fetchReferralRanks();
   }, []);
 
   const fetchSettings = async () => {
@@ -39,6 +49,43 @@ export default function AdminSettings() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchReferralRanks = async () => {
+    try {
+      const res = await fetch("/api/admin/referral-ranks");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setReferralRanks(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to load referral ranks", err);
+    }
+  };
+
+  const saveReferralRank = async (rank: any) => {
+    try {
+      const res = await fetch("/api/admin/referral-ranks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(rank),
+      });
+      if (!res.ok) throw new Error("Failed to save referral rank");
+      await fetchReferralRanks();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleCreateNewRank = async () => {
+    if (!newRank.name) return;
+    await saveReferralRank(newRank);
+    setNewRank({
+      name: "",
+      commissionPercent: 0.05,
+      minTeamVolume: 0,
+      minActiveReferrals: 0,
+      active: true,
+    });
   };
 
   const handleSave = async () => {
@@ -173,31 +220,152 @@ export default function AdminSettings() {
           </div>
         </div>
 
-        {/* SYSTEM CONTROL */}
-        <div className="bg-gray-900 p-10 rounded-[3rem] shadow-2xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-10 opacity-10 text-white">
-            <ShieldAlert size={100} />
-          </div>
-          <div className="flex items-center justify-between relative z-10">
-            <div className="flex items-center gap-6">
-              <div className={`p-4 rounded-2xl transition-colors ${settings.maintenanceMode ? 'bg-[#E11D48] text-white' : 'bg-white/10 text-white'}`}>
-                <ShieldAlert size={32} />
-              </div>
-              <div>
-                <h2 className="text-xl font-black uppercase italic text-white tracking-tight">System Lockdown</h2>
-                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-1">Activate Maintenance Protocols</p>
-              </div>
+        {/* REFERRAL RANKS */}
+        <div className="bg-white border border-gray-100 p-10 rounded-[3rem] shadow-sm">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+            <div>
+              <h2 className="text-xl font-black uppercase tracking-tighter italic text-[#111827]">Referral Rank Settings</h2>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mt-1">Configure commission rates and thresholds for referral tiers.</p>
             </div>
-            <button 
-              onClick={() => setSettings({...settings, maintenanceMode: !settings.maintenanceMode})}
-              className={`w-20 h-10 rounded-full relative transition-all duration-500 ${settings.maintenanceMode ? 'bg-[#E11D48]' : 'bg-white/20'}`}
+            <button
+              onClick={handleCreateNewRank}
+              className="px-6 py-3 bg-[#E11D48] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#BE123C] transition-all"
             >
-              <div className={`absolute top-2 w-6 h-6 bg-white rounded-full transition-all duration-500 ${settings.maintenanceMode ? 'left-12' : 'left-2 shadow-xl'}`} />
+              Add New Rank
             </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-6">
+            <input
+              value={newRank.name}
+              onChange={(e) => setNewRank({ ...newRank, name: e.target.value })}
+              placeholder="Rank name"
+              className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm"
+            />
+            <input
+              type="number"
+              value={newRank.commissionPercent}
+              step={0.01}
+              onChange={(e) => setNewRank({ ...newRank, commissionPercent: parseFloat(e.target.value) })}
+              placeholder="Commission %"
+              className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm"
+            />
+            <input
+              type="number"
+              value={newRank.minTeamVolume}
+              onChange={(e) => setNewRank({ ...newRank, minTeamVolume: parseFloat(e.target.value) })}
+              placeholder="Min Team Volume"
+              className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm"
+            />
+            <input
+              type="number"
+              value={newRank.minActiveReferrals}
+              onChange={(e) => setNewRank({ ...newRank, minActiveReferrals: parseInt(e.target.value) })}
+              placeholder="Min Referrals"
+              className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm"
+            />
+            <button
+              onClick={handleCreateNewRank}
+              className="px-6 py-3 bg-[#0F172A] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#E11D48] transition-all"
+            >
+              Create
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                <tr>
+                  <th className="px-4 py-3">Name</th>
+                  <th className="px-4 py-3">Commission</th>
+                  <th className="px-4 py-3">Min Volume</th>
+                  <th className="px-4 py-3">Min Referrals</th>
+                  <th className="px-4 py-3">Active</th>
+                  <th className="px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody>
+                {referralRanks.map((rank, idx) => (
+                  <tr key={rank.id} className="border-t border-gray-100">
+                    <td className="px-4 py-3">
+                      <input
+                        value={rank.name}
+                        onChange={(e) => {
+                          const updated = [...referralRanks];
+                          updated[idx] = { ...updated[idx], name: e.target.value };
+                          setReferralRanks(updated);
+                        }}
+                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <input
+                        type="number"
+                        value={rank.commissionPercent}
+                        step={0.01}
+                        onChange={(e) => {
+                          const updated = [...referralRanks];
+                          updated[idx] = { ...updated[idx], commissionPercent: parseFloat(e.target.value) };
+                          setReferralRanks(updated);
+                        }}
+                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <input
+                        type="number"
+                        value={rank.minTeamVolume}
+                        onChange={(e) => {
+                          const updated = [...referralRanks];
+                          updated[idx] = { ...updated[idx], minTeamVolume: parseFloat(e.target.value) };
+                          setReferralRanks(updated);
+                        }}
+                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <input
+                        type="number"
+                        value={rank.minActiveReferrals}
+                        onChange={(e) => {
+                          const updated = [...referralRanks];
+                          updated[idx] = { ...updated[idx], minActiveReferrals: parseInt(e.target.value) };
+                          setReferralRanks(updated);
+                        }}
+                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <label className="inline-flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={rank.active}
+                          onChange={(e) => {
+                            const updated = [...referralRanks];
+                            updated[idx] = { ...updated[idx], active: e.target.checked };
+                            setReferralRanks(updated);
+                          }}
+                          className="h-4 w-4"
+                        />
+                        <span className="text-[10px] font-black text-gray-500">Active</span>
+                      </label>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={() => saveReferralRank(rank)}
+                        className="px-4 py-2 bg-[#0F172A] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#E11D48] transition-all"
+                      >
+                        Save
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
 
-        {/* DEPLOY BUTTON */}
+        {/* SYSTEM CONTROL */}
         <button 
           onClick={handleSave}
           disabled={saving}

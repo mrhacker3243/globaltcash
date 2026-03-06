@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
-import { checkAndUpdateRank } from "@/lib/rankManager";
+import { checkAndUpdateRank, getCommissionPercentForRank } from "@/lib/rankManager";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
@@ -45,12 +45,7 @@ export async function POST(req: Request) {
     if (user.referrerId) {
       const referrer = await db.user.findUnique({ where: { id: user.referrerId } });
       if (referrer) {
-        const rankPercentages: Record<string, number> = {
-          "Starter": 0.05,
-          "Gold": 0.10,
-          // Add more ranks as needed
-        };
-        const percentage = rankPercentages[referrer.rankLevel] || 0.05;
+        const percentage = await getCommissionPercentForRank(referrer.rankLevel);
         const bonus = amount * percentage;
 
         // Get IP address from request headers
@@ -82,7 +77,8 @@ export async function POST(req: Request) {
             data: {
               balance: { increment: bonus },
               referralCount: { increment: 1 },
-              milestoneProgress: { increment: 1 }
+              // Track total referred deposit volume so rewards can be based on sales amount
+              milestoneProgress: { increment: Math.round(amount) }
             }
           });
 

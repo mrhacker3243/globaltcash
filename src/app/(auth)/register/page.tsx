@@ -64,7 +64,7 @@ function RegisterForm() {
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          referralCode: formData.referralCode
+          referrerId: formData.referralCode
         }),
       });
 

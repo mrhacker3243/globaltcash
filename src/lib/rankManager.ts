@@ -1,5 +1,14 @@
 import { db } from "./db";
 
+/**
+ * Returns the commission percentage for a given rank level.
+ * Falls back to 0.05 (5%) when no rank exists.
+ */
+export async function getCommissionPercentForRank(rankLevel: string) {
+  const rank = await db.referralRank.findUnique({ where: { name: rankLevel } });
+  return rank?.commissionPercent ?? 0.05;
+}
+
 export async function checkAndUpdateRank(userId: string) {
   const user = await db.user.findUnique({
     where: { id: userId },
@@ -31,15 +40,24 @@ export async function checkAndUpdateRank(userId: string) {
     referral.referee.deposits.some(deposit => deposit.status === "ACTIVE")
   ).length;
 
-  let newRank = user.rankLevel;
+  // Determine rank based on configured referral ranks in the database.
+  const ranks = await db.referralRank.findMany({
+    where: { active: true },
+    orderBy: [
+      { minTeamVolume: 'desc' },
+      { minActiveReferrals: 'desc' },
+    ]
+  });
 
-  // Rank advancement criteria
-  if (teamVolume >= 5000 || activeReferrals >= 20) {
-    newRank = "Gold";
-  } else if (teamVolume >= 1000 || activeReferrals >= 5) {
-    newRank = "Silver"; // If you want intermediate ranks
-  } else {
-    newRank = "Starter";
+  let newRank = user.rankLevel || "Starter";
+
+  for (const rank of ranks) {
+    const qualifiesByVolume = teamVolume >= (rank.minTeamVolume ?? 0);
+    const qualifiesByReferrals = activeReferrals >= (rank.minActiveReferrals ?? 0);
+    if (qualifiesByVolume || qualifiesByReferrals) {
+      newRank = rank.name;
+      break;
+    }
   }
 
   if (newRank !== user.rankLevel) {
