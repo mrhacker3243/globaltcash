@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const { email, password, name } = await req.json();
+    const { email, password, name, referrerId } = await req.json();
 
     if (!email || !password) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
@@ -19,7 +19,21 @@ export async function POST(req: Request) {
     // 2. Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 3. Create user
+    // 3. Get IP and device info
+    const ipAddress = req.headers.get('x-forwarded-for') ||
+                     req.headers.get('x-real-ip') ||
+                     'unknown';
+    const deviceFingerprint = req.headers.get('user-agent') || '';
+
+    // 4. Validate referrer if provided
+    if (referrerId) {
+      const referrer = await db.user.findUnique({ where: { id: referrerId } });
+      if (!referrer) {
+        return NextResponse.json({ error: "Invalid referrer" }, { status: 400 });
+      }
+    }
+
+    // 5. Create user
     const user = await db.user.create({
       data: {
         email,
@@ -27,6 +41,9 @@ export async function POST(req: Request) {
         password: hashedPassword,
         role: "USER", // Default role for signup
         balance: 0,
+        referrerId,
+        ipAddress,
+        deviceFingerprint,
       }
     });
 

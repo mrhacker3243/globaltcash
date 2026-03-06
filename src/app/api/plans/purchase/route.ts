@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
+import { checkAndUpdateRank } from "@/lib/rankManager";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
@@ -39,6 +40,61 @@ export async function POST(req: Request) {
         }
       })
     ]);
+
+    // Handle referral bonus and milestone progress
+    if (user.referrerId) {
+      const referrer = await db.user.findUnique({ where: { id: user.referrerId } });
+      if (referrer) {
+        const rankPercentages: Record<string, number> = {
+          "Starter": 0.05,
+          "Gold": 0.10,
+          // Add more ranks as needed
+        };
+        const percentage = rankPercentages[referrer.rankLevel] || 0.05;
+        const bonus = amount * percentage;
+
+        // Get IP address from request headers
+        const ipAddress = req.headers.get('x-forwarded-for') ||
+                         req.headers.get('x-real-ip') ||
+                         'unknown';
+
+        // Basic device fingerprint (can be enhanced)
+        const userAgent = req.headers.get('user-agent') || '';
+
+        // Check for fraud: same IP or similar user agent
+        const isFraud = referrer.ipAddress === ipAddress ||
+                       (referrer.deviceFingerprint && referrer.deviceFingerprint === userAgent);
+
+        if (!isFraud) {
+          await db.referral.create({
+            data: {
+              referrerId: referrer.id,
+              refereeId: user.id,
+              commissionAmount: bonus,
+              status: "PAID", // Auto-paid for now, can change to PENDING for manual approval
+              ipAddress,
+              deviceFingerprint: userAgent,
+            }
+          });
+
+          await db.user.update({
+            where: { id: referrer.id },
+            data: {
+              balance: { increment: bonus },
+              referralCount: { increment: 1 },
+              milestoneProgress: { increment: 1 }
+            }
+          });
+
+          console.log(`💰 Referral bonus: ${bonus} added to referrer ${referrer.id}`);
+          
+          // Check for rank advancement
+          await checkAndUpdateRank(referrer.id);
+        } else {
+          console.log(`🚫 Fraud detected: Referral bonus blocked for referrer ${referrer.id}`);
+        }
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

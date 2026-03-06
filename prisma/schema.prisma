@@ -20,10 +20,18 @@ model User {
   isTwoFactorEnabled Boolean      @default(false)
   referrerId         String?
   totalDeposit       Float        @default(0.0)
+  referralCount      Int          @default(0)
+  rankLevel          String       @default("Starter")
+  milestoneProgress  Int          @default(0)
+  ipAddress          String?
+  deviceFingerprint  String?
   deposits           Deposit[]
   referrer           User?        @relation("UserReferrals", fields: [referrerId], references: [id])
   referredUsers      User[]       @relation("UserReferrals")
   withdrawals        Withdrawal[]
+  referrerReferrals  Referral[]   @relation("ReferrerReferrals")
+  refereeReferrals   Referral[]   @relation("RefereeReferrals")
+  claimedRewards     ClaimedReward[]
 }
 
 model SystemSetting {
@@ -86,6 +94,43 @@ model Plan {
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Reward {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  targetSales Int
+  prizeAmount Float
+  prizeType   String   @default("cash")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  claimedRewards ClaimedReward[]
+}
+
+model Referral {
+  id               String   @id @default(cuid())
+  referrerId       String
+  refereeId        String
+  commissionAmount Float
+  status           String   @default("PENDING")
+  ipAddress        String?
+  deviceFingerprint String?
+  createdAt        DateTime @default(now())
+  referrer         User     @relation("ReferrerReferrals", fields: [referrerId], references: [id])
+  referee          User     @relation("RefereeReferrals", fields: [refereeId], references: [id])
+}
+
+model ClaimedReward {
+  id         String   @id @default(cuid())
+  userId     String
+  rewardId   String
+  status     String   @default("PENDING")
+  claimedAt  DateTime @default(now())
+  approvedAt DateTime?
+  user       User     @relation(fields: [userId], references: [id])
+  reward     Reward   @relation(fields: [rewardId], references: [id])
 }
 
 enum Role {
