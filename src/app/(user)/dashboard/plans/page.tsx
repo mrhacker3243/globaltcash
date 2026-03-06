@@ -1,12 +1,15 @@
 "use client";
 
-import { Zap, Trophy, Crown, X, Loader2, Clock, AlertCircle, Coins } from "lucide-react";
+import { Zap, Trophy, Crown, X, Loader2, Clock, AlertCircle, Coins, ArrowRight, LayoutDashboard, LogIn } from "lucide-react";
 import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useSession } from "next-auth/react";
 
+// FIX: Storing Component Reference to avoid "at constructor" error
 const iconMap: Record<string, any> = {
-  Zap: <Zap className="text-[#E11D48]" size={22} />,
-  Trophy: <Trophy className="text-[#E11D48]" size={22} />,
-  Crown: <Crown className="text-[#E11D48]" size={22} />,
+  Zap: Zap,
+  Trophy: Trophy,
+  Crown: Crown,
 };
 
 function CountdownTimer({ nextClaimTime, onZero }: { nextClaimTime: number; onZero?: () => void }) {
@@ -14,7 +17,6 @@ function CountdownTimer({ nextClaimTime, onZero }: { nextClaimTime: number; onZe
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
-
     const updateTimer = () => {
       const now = new Date().getTime();
       const diff = nextClaimTime - now;
@@ -22,39 +24,28 @@ function CountdownTimer({ nextClaimTime, onZero }: { nextClaimTime: number; onZe
       setTimeLeft(newTimeLeft);
       if (newTimeLeft > 0) {
         timeoutId = setTimeout(updateTimer, 1000);
-      } else if (onZero) {
-        onZero();
-      }
+      } else if (onZero) { onZero(); }
     };
-
     updateTimer();
-
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-    };
+    return () => { if (timeoutId) clearTimeout(timeoutId); };
   }, [nextClaimTime, onZero]);
 
-  const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const hours = Math.floor((timeLeft / (1000 * 60 * 60)));
   const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
   const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
 
-  if (timeLeft <= 0) {
-    return <div className="text-[10px] font-bold text-green-600 uppercase">Claim Available!</div>;
-  }
-
-  const timeString = days > 0 
-    ? `${days}d ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-    : `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  if (timeLeft <= 0) return <div className="text-[9px] font-black text-emerald-500 uppercase italic">Claim Ready!</div>;
 
   return (
-    <div className="text-[10px] font-bold text-gray-400 uppercase">
-      Next claim in: {timeString}
+    <div className="text-[9px] font-black text-slate-400 uppercase flex items-center gap-1.5">
+      <Clock size={10} className="text-[#E11D48]" />
+      {hours.toString().padStart(2, '0')}:{minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}
     </div>
   );
 }
 
 export default function PlansPage() {
+  const { data: session } = useSession();
   const [plans, setPlans] = useState<any[]>([]);
   const [userPlans, setUserPlans] = useState<any[]>([]);
   const [totalClaimed, setTotalClaimed] = useState<number>(0);
@@ -67,15 +58,15 @@ export default function PlansPage() {
 
   useEffect(() => {
     fetchPlans();
-    fetchUserDashboardData();
-  }, []);
+    if (session) fetchUserDashboardData();
+  }, [session]);
 
   const fetchPlans = async () => {
     try {
       const res = await fetch("/api/plans");
       const data = await res.json();
       if (Array.isArray(data)) setPlans(data);
-    } catch (err) { console.error("Fetch Plans Error:", err); }
+    } catch (err) { console.error(err); }
   };
 
   const fetchUserDashboardData = async () => {
@@ -84,17 +75,14 @@ export default function PlansPage() {
       const data = await res.json();
       if (data.activePlans) {
         setUserPlans(data.activePlans);
-        // compute overall totals
-        let claimedSum = 0;
-        let pendingSum = 0;
+        let cSum = 0, pSum = 0;
         data.activePlans.forEach((p: any) => {
-          claimedSum += p.claimedAmount || 0;
-          pendingSum += p.pendingAmount || 0;
+          cSum += p.claimedAmount || 0;
+          pSum += p.pendingAmount || 0;
         });
-        setTotalClaimed(claimedSum);
-        setTotalPending(pendingSum);
+        setTotalClaimed(cSum); setTotalPending(pSum);
       }
-    } catch (err) { console.error("Sync Error:", err); }
+    } catch (err) { console.error(err); }
   };
 
   const handleClaim = async (depositId: string) => {
@@ -105,171 +93,175 @@ export default function PlansPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ depositId })
       });
-      const data = await res.json();
-      if (res.ok) {
-        alert(`Rs. ${data.amount} claimed for ${data.claimedDays} day(s)!`);
-        fetchUserDashboardData();
-      } else {
-        alert(data.error || "Claim failed");
-      }
-    } catch (err) { alert("Error"); }
+      if (res.ok) fetchUserDashboardData();
+    } catch (err) { console.error(err); }
     finally { setClaimingId(null); }
   };
 
   const handlePurchase = async () => {
+    if (!session) { alert("Please login to invest"); return; }
     if (!amount || !selectedPlan) return;
-    
-    const numAmount = parseFloat(amount);
-    if (numAmount < selectedPlan.minAmount || numAmount > selectedPlan.maxAmount) {
-      alert(`Amount must be between Rs ${selectedPlan.minAmount} and Rs ${selectedPlan.maxAmount}`);
-      return;
-    }
-
     setLoading(true);
     try {
       const res = await fetch("/api/plans/purchase", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planName: selectedPlan.name, amount: numAmount })
+        body: JSON.stringify({ planName: selectedPlan.name, amount: parseFloat(amount) })
       });
-      const data = await res.json();
       if (res.ok) {
-        alert("Plan purchased successfully!");
-        setSelectedPlan(null);
-        setAmount("");
-        fetchUserDashboardData();
+        setSelectedPlan(null); setAmount(""); fetchUserDashboardData();
       } else {
-        alert(data.error || "Purchase failed");
+        const d = await res.json(); alert(d.error);
       }
-    } catch (err) {
-      alert("Error purchasing plan");
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { alert("Error"); }
+    finally { setLoading(false); }
   };
 
   return (
-    <div className="bg-[#F8FAFC] min-h-screen p-4 pt-24">
+    <div className="bg-[#F8FAFC] min-h-screen p-3 md:p-10 pt-20 md:pt-28 font-sans">
       <div className="max-w-6xl mx-auto">
-        {/* Header with Claim Button */}
-        <div className="mb-10 bg-white p-6 rounded-[2rem] shadow-sm flex justify-between items-center">
-          <h1 className="text-2xl font-black italic uppercase">Investment <span className="text-[#E11D48]">Plans</span></h1>
-          <button onClick={() => setIsDrawerOpen(true)} className="bg-[#0F172A] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2">
-            <Coins size={18}/> My Purchased Plans ({userPlans.length})
-          </button>
+        
+        {/* RESPONSIVE HEADER */}
+        <div className="mb-6 md:mb-10 bg-white p-4 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left">
+          <div>
+            <h1 className="text-xl md:text-3xl font-black italic uppercase text-[#0F172A]">
+              Investment <span className="text-[#E11D48]">Plans</span>
+            </h1>
+            <p className="text-[8px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 italic">Earn Daily Profits</p>
+          </div>
+
+          <div className="w-full sm:w-auto">
+            {session ? (
+              <button 
+                onClick={() => setIsDrawerOpen(true)} 
+                className="w-full bg-[#0F172A] text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg"
+              >
+                <LayoutDashboard size={14} className="text-[#E11D48]"/> My Plans ({userPlans.length})
+              </button>
+            ) : (
+              <Link 
+                href="/login" 
+                className="w-full inline-flex bg-[#E11D48] text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest items-center justify-center gap-2 shadow-lg"
+              >
+                <LogIn size={14} /> Get Started
+              </Link>
+            )}
+          </div>
         </div>
 
-        {/* Plans Display Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {plans.map((plan, i) => (
-            <div key={i} className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 flex flex-col group transition-all hover:shadow-lg">
-              <div className="bg-gray-50 w-14 h-14 rounded-2xl flex items-center justify-center mb-6">
-                {iconMap[plan.icon] || <Zap className="text-[#E11D48]" />}
+        {/* PLANS GRID */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
+          {plans.map((plan, i) => {
+            const IconComp = iconMap[plan.icon] || Zap;
+            return (
+              <div key={i} className="bg-white p-6 md:p-10 rounded-[2rem] border border-slate-50 shadow-sm group hover:border-[#E11D48] transition-all relative overflow-hidden">
+                <div className="bg-slate-50 w-12 h-12 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-[#0F172A] transition-colors">
+                  <IconComp className="text-[#E11D48]" size={22} />
+                </div>
+                <h3 className="text-lg md:text-xl font-black uppercase text-[#0F172A] italic">{plan.name}</h3>
+                <div className="flex items-baseline gap-1 my-3">
+                  <span className="text-3xl md:text-5xl font-black tracking-tighter">{plan.roi}%</span>
+                  <span className="text-[10px] font-black text-[#E11D48] uppercase italic">Daily</span>
+                </div>
+                <div className="space-y-1 mb-6">
+                  <p className="text-[9px] font-bold text-slate-400 uppercase">Min: <span className="text-slate-900">Rs {plan.minAmount}</span></p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase">Max: <span className="text-slate-900">Rs {plan.maxAmount}</span></p>
+                </div>
+                <button 
+                  onClick={() => setSelectedPlan(plan)} 
+                  className="w-full py-4 bg-[#F8FAFC] border border-slate-100 rounded-2xl font-black text-[10px] uppercase tracking-widest group-hover:bg-[#E11D48] group-hover:text-white transition-all shadow-sm"
+                >
+                  Invest Now
+                </button>
               </div>
-              <h3 className="text-xl font-black uppercase text-[#0F172A]">{plan.name}</h3>
-              <div className="flex items-baseline gap-1 my-4">
-                <span className="text-4xl font-black">{plan.roi}%</span>
-                <span className="text-xs font-bold text-[#E11D48] uppercase">/ Day</span>
-              </div>
-              <p className="text-[10px] font-bold text-gray-400 mb-6 tracking-widest">MIN: RS {plan.minAmount} | MAX: RS {plan.maxAmount}</p>
-              <button onClick={() => setSelectedPlan(plan)} className="w-full py-4 bg-[#F8FAFC] rounded-xl font-black text-[10px] uppercase hover:bg-[#E11D48] hover:text-white transition-all">
-                Invest Now
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      {/* Drawer for Claims */}
+      {/* DRAWER FOR MY PLANS */}
       {isDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsDrawerOpen(false)} />
-          <div className="relative w-full max-w-md bg-white h-full p-8 shadow-2xl overflow-y-auto">
+        <div className="fixed inset-0 z-[100] flex justify-end">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setIsDrawerOpen(false)} />
+          <div className="relative w-full max-w-[320px] md:max-w-md bg-white h-full p-6 md:p-10 shadow-2xl overflow-y-auto animate-in slide-in-from-right duration-300">
             <div className="flex justify-between items-center mb-8">
-              <h2 className="text-xl font-black uppercase">My <span className="text-[#E11D48]">Purchased Plans</span></h2>
-              <X className="cursor-pointer" onClick={() => setIsDrawerOpen(false)} />
+              <h2 className="text-lg font-black uppercase italic">Active <span className="text-[#E11D48]">Plans</span></h2>
+              <button onClick={() => setIsDrawerOpen(false)}><X size={20} className="text-slate-300" /></button>
             </div>
-            <div className="mb-4 text-[12px] font-bold">
-              Total Claimed: Rs. {totalClaimed.toFixed(0)} | Total Pending: Rs. {totalPending.toFixed(0)}
+
+            <div className="grid grid-cols-2 gap-3 mb-8 text-center">
+               <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Claimed</p>
+                  <p className="text-xs font-black text-slate-900">Rs {totalClaimed.toFixed(0)}</p>
+               </div>
+               <div className="bg-rose-50 p-3 rounded-2xl border border-rose-100">
+                  <p className="text-[8px] font-black text-[#E11D48] uppercase tracking-widest mb-1">Pending</p>
+                  <p className="text-xs font-black text-[#E11D48]">Rs {totalPending.toFixed(0)}</p>
+               </div>
             </div>
-            {userPlans.map((up, idx) => {
-              const lastClaim = up.lastClaimedAt ? new Date(up.lastClaimedAt) : new Date(up.createdAt);
-              const pendingDays = up.pendingDays ?? Math.floor((new Date().getTime() - lastClaim.getTime()) / (1000 * 60 * 60 * 24));
-              const claimedAmt = up.claimedAmount || 0;
-              const pendingAmt = up.pendingAmount || 0;
-              const totalAvailable = claimedAmt + pendingAmt;
-              const percentClaimed = totalAvailable > 0 ? (claimedAmt / totalAvailable) * 100 : 0;
-              return (
-                <div key={idx} className="bg-gray-50 p-6 rounded-3xl mb-4 border border-gray-100">
-                  <div className="flex justify-between mb-2">
-                    <span className="text-[10px] font-black uppercase text-[#E11D48]">{up.planName}</span>
-                    {pendingDays >= 1 && <span className="text-[9px] font-black bg-red-500 text-white px-2 py-1 rounded-full">{pendingDays} Days Pending</span>}
+
+            <div className="space-y-4">
+              {userPlans.map((up, idx) => (
+                <div key={idx} className="bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-sm">
+                  <div className="flex justify-between text-[9px] font-black uppercase mb-2">
+                    <span className="text-slate-400">{up.planName}</span>
+                    <span className="text-[#E11D48]">{up.pendingDays}d pending</span>
                   </div>
-                  <h4 className="text-lg font-black italic">Rs. {up.amount}</h4>
-                  <div className="text-[10px] mt-2">
-                    <div>Claimed: Rs. {claimedAmt.toFixed(0)}</div>
-                    <div>Pending: Rs. {pendingAmt.toFixed(0)}</div>
-                    <div>Purchased: {new Date(up.createdAt).toLocaleString()}</div>
-                    {totalAvailable > 0 && (
-                      <div>Progress: {percentClaimed.toFixed(1)}%</div>
-                    )}
-                  </div>
+                  <h4 className="text-lg font-black italic text-slate-900">Rs {up.amount.toLocaleString()}</h4>
                   <div className="mt-4">
-                    {pendingDays >= 1 ? (
-                      <button onClick={() => handleClaim(up.id)} disabled={claimingId === up.id} className="w-full py-3 bg-[#0F172A] text-white rounded-xl font-black text-[10px] uppercase">
-                        {claimingId === up.id ? "Claiming..." : `Claim Rs. ${pendingAmt.toFixed(0)}`}
+                    {up.pendingDays >= 1 ? (
+                      <button 
+                        onClick={() => handleClaim(up.id)} 
+                        disabled={claimingId === up.id} 
+                        className="w-full py-3 bg-[#E11D48] text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg shadow-rose-100"
+                      >
+                        {claimingId === up.id ? "Syncing..." : `Claim Rs ${up.pendingAmount?.toFixed(0)}`}
                       </button>
                     ) : (
-                      <CountdownTimer nextClaimTime={up.nextClaimTime} onZero={fetchUserDashboardData} />
+                      <div className="bg-slate-50 py-2 px-4 rounded-xl border border-slate-100 flex justify-center">
+                        <CountdownTimer nextClaimTime={up.nextClaimTime} onZero={fetchUserDashboardData} />
+                      </div>
                     )}
                   </div>
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
         </div>
       )}
 
-      {/* Purchase Modal */}
+      {/* PURCHASE MODAL */}
       {selectedPlan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSelectedPlan(null)} />
-          <div className="relative bg-white p-8 rounded-[2rem] shadow-2xl max-w-md w-full mx-4">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedPlan(null)} />
+          <div className="relative bg-white p-6 md:p-10 rounded-[2rem] shadow-2xl max-w-sm w-full">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-black uppercase">Invest in <span className="text-[#E11D48]">{selectedPlan.name}</span></h2>
-              <X className="cursor-pointer" onClick={() => setSelectedPlan(null)} />
+              <h2 className="text-lg font-black uppercase italic">Confirm <span className="text-[#E11D48]">Invest</span></h2>
+              <X className="cursor-pointer text-slate-300" onClick={() => setSelectedPlan(null)} />
             </div>
             
-            <div className="mb-6">
-              <div className="bg-gray-50 w-16 h-16 rounded-2xl flex items-center justify-center mb-4">
-                {iconMap[selectedPlan.icon] || <Zap className="text-[#E11D48]" size={24} />}
-              </div>
-              <div className="flex items-baseline gap-1 mb-2">
-                <span className="text-3xl font-black">{selectedPlan.roi}%</span>
-                <span className="text-sm font-bold text-[#E11D48] uppercase">/ Day</span>
-              </div>
-              <p className="text-sm font-bold text-gray-400">MIN: Rs {selectedPlan.minAmount} | MAX: Rs {selectedPlan.maxAmount}</p>
+            <div className="mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <p className="text-[10px] font-black text-slate-400 uppercase">{selectedPlan.name}</p>
+              <p className="text-xl font-black text-[#0F172A] italic">{selectedPlan.roi}% Daily Profit</p>
             </div>
 
             <div className="mb-6">
-              <label className="block text-sm font-bold text-gray-700 mb-2">Investment Amount (Rs)</label>
+              <label className="block text-[10px] font-black uppercase text-slate-400 mb-2 italic">Enter Amount</label>
               <input
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder={`Enter amount between ${selectedPlan.minAmount} - ${selectedPlan.maxAmount}`}
-                className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E11D48] focus:border-transparent"
-                min={selectedPlan.minAmount}
-                max={selectedPlan.maxAmount}
+                placeholder={`Range: ${selectedPlan.minAmount} - ${selectedPlan.maxAmount}`}
+                className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#E11D48] text-sm font-black"
               />
             </div>
 
             <button
               onClick={handlePurchase}
               disabled={loading || !amount}
-              className="w-full py-4 bg-[#0F172A] text-white rounded-xl font-black text-sm uppercase disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-4 bg-[#0F172A] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-[#E11D48] transition-all disabled:opacity-30"
             >
-              {loading ? "Processing..." : "Invest Now"}
+              {loading ? "Allocating..." : "Confirm Investment"}
             </button>
           </div>
         </div>
