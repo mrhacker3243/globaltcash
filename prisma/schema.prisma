@@ -8,33 +8,31 @@ datasource db {
 }
 
 model User {
-  id              String          @id @default(cuid())
-  email           String          @unique
-  password        String
-  role            Role            @default(USER)
-  balance         Float           @default(0.0)
-  totalDeposit    Float           @default(0.0)
-  createdAt       DateTime        @default(now())
-  name            String?
-  walletAddress   String?
-  twoFactorSecret String?
-  isTwoFactorEnabled Boolean      @default(false)
-  
-  // Relations
-  deposits        Deposit[]
-  withdrawals     Withdrawal[]
-  claimedRewards  ClaimedReward[]
-  
-  // Referral Logic
-  referrerId      String?
-  referrer        User?           @relation("UserReferrals", fields: [referrerId], references: [id])
-  referredUsers   User[]          @relation("UserReferrals")
-  referralCount   Int             @default(0)
-  
-  // Rank Logic
-  rankLevel       String?         @default("Bronze")
-  rankId          String?
-  referralRank    ReferralRank?   @relation(fields: [rankId], references: [id])
+  id                 String          @id @default(cuid())
+  email              String          @unique
+  password           String
+  role               Role            @default(USER)
+  isFrozen           Boolean         @default(false)
+  balance            Float           @default(0.0)
+  createdAt          DateTime        @default(now())
+  name               String?
+  walletAddress      String?
+  twoFactorSecret    String?
+  isTwoFactorEnabled Boolean         @default(false)
+  referrerId         String?
+  totalDeposit       Float           @default(0.0)
+  referralCount      Int             @default(0)
+  rankLevel          String          @default("Starter")
+  milestoneProgress  Int             @default(0)
+  ipAddress          String?
+  deviceFingerprint  String?
+  deposits           Deposit[]
+  referrer           User?           @relation("UserReferrals", fields: [referrerId], references: [id])
+  referredUsers      User[]          @relation("UserReferrals")
+  withdrawals        Withdrawal[]
+  referrerReferrals  Referral[]      @relation("ReferrerReferrals")
+  refereeReferrals   Referral[]      @relation("RefereeReferrals")
+  claimedRewards     ClaimedReward[]
 }
 
 model SystemSetting {
@@ -53,25 +51,27 @@ model Deposit {
   id              String         @id @default(cuid())
   userId          String
   amount          Float
-  gateway         String?        
+  roi             Float          @default(0.0)
+  gateway         String?
   planName        String?        @default("Manual Deposit")
-  transactionId   String?        @unique 
-  transactionHash String?        @unique 
-  slipImage       String?        
+  transactionId   String?        @unique
+  transactionHash String?        @unique
+  slipImage       String?
   status          DepositStatus  @default(PENDING)
   createdAt       DateTime       @default(now())
   lastClaimedAt   DateTime       @default(now())
-  profitRecords   ProfitRecord[] 
+  nextClaimAt     DateTime?
   user            User           @relation(fields: [userId], references: [id])
+  profitRecords   ProfitRecord[]
 }
 
 model ProfitRecord {
-  id          String   @id @default(cuid())
-  depositId   String
-  amount      Float
-  status      String   @default("PENDING")
-  createdAt   DateTime @default(now())
-  deposit     Deposit  @relation(fields: [depositId], references: [id])
+  id        String   @id @default(cuid())
+  depositId String
+  amount    Float
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  deposit   Deposit  @relation(fields: [depositId], references: [id])
 }
 
 model Withdrawal {
@@ -84,34 +84,66 @@ model Withdrawal {
   user      User     @relation(fields: [userId], references: [id])
 }
 
+model Plan {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  minAmount Float
+  maxAmount Float
+  roi       Float
+  duration  String
+  icon      String?  @default("Zap")
+  popular   Boolean  @default(false)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Reward {
+  id             String          @id @default(cuid())
+  title          String
+  description    String
+  targetSales    Int
+  prizeAmount    Float
+  prizeType      String          @default("cash")
+  active         Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  claimedRewards ClaimedReward[]
+}
+
 model ReferralRank {
-  id           String   @id @default(cuid())
-  name         String   @unique
-  minReferrals Int
-  rewardAmount Float
-  users        User[]
+  id                 String   @id @default(cuid())
+  name               String   @unique
+  commissionPercent  Float    @default(0.05)
+  minTeamVolume      Float    @default(0)
+  minActiveReferrals Int      @default(0)
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @default(now()) @updatedAt
+}
+
+model Referral {
+  id                String   @id @default(cuid())
+  referrerId        String
+  refereeId         String
+  commissionAmount  Float
+  status            String   @default("PENDING")
+  ipAddress         String?
+  deviceFingerprint String?
+  createdAt         DateTime @default(now())
+  referrer          User     @relation("ReferrerReferrals", fields: [referrerId], references: [id])
+  referee           User     @relation("RefereeReferrals", fields: [refereeId], references: [id])
 }
 
 model ClaimedReward {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  amount    Float
-  createdAt DateTime @default(now())
-}
-
-model Plan {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  minAmount   Float
-  maxAmount   Float
-  roi         Float    
-  duration    String   
-  icon        String?  @default("Zap")
-  popular     Boolean  @default(false)
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String    @id @default(cuid())
+  userId     String
+  rewardId   String
+  status     String    @default("PENDING")
+  claimedAt  DateTime  @default(now())
+  approvedAt DateTime?
+  user       User      @relation(fields: [userId], references: [id])
+  reward     Reward    @relation(fields: [rewardId], references: [id])
 }
 
 enum Role {

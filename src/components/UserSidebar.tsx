@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react"; 
@@ -40,13 +40,35 @@ const BrandLogo = ({ size = "md", type = "default", className = "" }: any) => {
 
 export default function UserSidebar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [rewardsCount, setRewardsCount] = useState(0);
   const pathname = usePathname();
+
+  useEffect(() => {
+    fetchRewardsCount();
+  }, []);
+
+  const fetchRewardsCount = async () => {
+    try {
+      const res = await fetch("/api/user/rewards");
+      const data = await res.json();
+      if (data.rewards) {
+        setRewardsCount(data.rewards.length);
+      }
+    } catch (err) {
+      console.error("Failed to fetch rewards count");
+    }
+  };
 
   // ✅ Rewards section add kar diya yahan
   const menuItems = [
     { icon: <LayoutDashboard size={20} />, label: "Dashboard", href: "/dashboard" },
     { icon: <Landmark size={20} />, label: "Invest Plans", href: "/dashboard/plans" },
-    { icon: <Gift size={20} />, label: "My Rewards", href: "/dashboard/rewards" }, // 🎁 Naya Link
+    { 
+      icon: <Gift size={20} />, 
+      label: "My Rewards", 
+      href: "/dashboard/rewards",
+      badge: rewardsCount > 0 ? rewardsCount : null
+    }, // 🎁 Naya Link with badge
     { icon: <ArrowDownRight size={20} />, label: "Deposit", href: "/dashboard/deposit" },
     { icon: <ArrowUpLeft size={20} />, label: "Withdraw", href: "/dashboard/withdraw" },
     { icon: <Users2 size={20} />, label: "Referrals", href: "/dashboard/affiliates" },
@@ -91,6 +113,11 @@ export default function UserSidebar() {
                   {item.icon}
                 </span>
                 {item.label}
+                {item.badge && (
+                  <span className="ml-auto bg-rose-500 text-white text-[8px] font-black px-2 py-1 rounded-full min-w-[20px] text-center">
+                    {item.badge}
+                  </span>
+                )}
               </Link>
             );
           })}

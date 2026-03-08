@@ -21,8 +21,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Deposit not found" }, { status: 404 });
     }
 
-    if (deposit.status === "APPROVED") {
-      return NextResponse.json({ error: "Already approved" }, { status: 400 });
+    if (deposit.status !== "PENDING") {
+      return NextResponse.json({ error: "Only pending deposits can be approved" }, { status: 400 });
     }
 
     await db.$transaction([

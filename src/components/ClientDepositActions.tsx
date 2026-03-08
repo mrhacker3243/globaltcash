@@ -41,6 +41,38 @@ export default function ClientDepositActions({ depositId }: { depositId: string 
     }
   };
 
+  const handleReject = async () => {
+    if (!confirm("Kya aap waqai ye deposit reject karna chahte hain?")) return;
+
+    setLoading(true);
+    const promise = fetch("/api/admin/deposit/reject", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ depositId }),
+    });
+
+    toast.promise(promise, {
+      loading: 'Reject kar rahe hain...',
+      success: async (res: Response) => {
+        if (!res.ok) {
+           const err = await res.json();
+           throw new Error(err.error || "Kuch ghalti hui hai");
+        }
+        router.refresh();
+        return 'Deposit reject ho gaya';
+      },
+      error: (err: any) => err.message || 'Reject nahi ho saka. Dubara check karein.',
+    });
+
+    try {
+      await promise;
+    } catch (error) {
+      console.error("❌ Reject error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex justify-end gap-3">
       {/* Approve Button - Green Rose Style */}

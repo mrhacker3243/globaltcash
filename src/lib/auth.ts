@@ -46,6 +46,11 @@ export const authOptions: NextAuthOptions = {
             throw new Error("Incorrect password");
           }
 
+          if ((user as any).isFrozen) {
+            console.warn('⚠️ Login attempt for frozen user:', credentials.email);
+            throw new Error("Your account has been frozen. Please contact support.");
+          }
+
           console.log('✅ Login successful for:', user.email);
 
           return { 

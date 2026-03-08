@@ -50,7 +50,22 @@ async function main() {
     })
   }
 
-  console.log('✅ Admin, System Settings, and Investment Plans Seeded Successfully')
+  // Initialize default referral ranks (used for commission and rank progression)
+  const defaultRanks = [
+    { name: "Starter", commissionPercent: 0.05, minTeamVolume: 0, minActiveReferrals: 0, active: true },
+    { name: "Silver", commissionPercent: 0.08, minTeamVolume: 1000, minActiveReferrals: 5, active: true },
+    { name: "Gold", commissionPercent: 0.10, minTeamVolume: 5000, minActiveReferrals: 20, active: true },
+  ];
+
+  for (const rank of defaultRanks) {
+    await prisma.referralRank.upsert({
+      where: { name: rank.name },
+      update: rank,
+      create: rank,
+    });
+  }
+
+  console.log('✅ Admin, System Settings, Investment Plans, and Referral Ranks Seeded Successfully')
 }
 
 main()

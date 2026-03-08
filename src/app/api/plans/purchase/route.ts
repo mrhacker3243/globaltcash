@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
+import { checkAndUpdateRank, getCommissionPercentForRank } from "@/lib/rankManager";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
@@ -19,6 +20,9 @@ export async function POST(req: Request) {
 
     const transactionId = `PLAN-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
+    const nextClaimAtTime = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    console.log(`🛒 Plan purchase: ${planName} for user ${user.id}, nextClaimAt: ${nextClaimAtTime.toISOString()}`);
+
     await db.$transaction([
       db.user.update({
         where: { id: user.id },
@@ -31,10 +35,61 @@ export async function POST(req: Request) {
           planName: planName,
           gateway: "Internal", // Isko simple rakhein
           status: "ACTIVE" as any, // Plans dikhane ke liye aksar status "ACTIVE" chahiye hota hai
-          transactionId
+          transactionId,
+          nextClaimAt: nextClaimAtTime
         }
       })
     ]);
+
+    // Handle referral bonus and milestone progress
+    if (user.referrerId) {
+      const referrer = await db.user.findUnique({ where: { id: user.referrerId } });
+      if (referrer) {
+        const percentage = await getCommissionPercentForRank(referrer.rankLevel);
+        const bonus = amount * percentage;
+
+        // Get IP address from request headers
+        const ipAddress = req.headers.get('x-forwarded-for') ||
+                         req.headers.get('x-real-ip') ||
+                         'unknown';
+
+        // Basic device fingerprint (can be enhanced)
+        const userAgent = req.headers.get('user-agent') || '';
+
+        // Check for fraud: same IP or similar user agent
+        const isFraud = referrer.ipAddress === ipAddress ||
+                       (referrer.deviceFingerprint && referrer.deviceFingerprint === userAgent);
+
+        if (!isFraud) {
+          await db.referral.create({
+            data: {
+              referrerId: referrer.id,
+              refereeId: user.id,
+              commissionAmount: bonus,
+              status: "PAID", // Auto-paid for now, can change to PENDING for manual approval
+              ipAddress,
+              deviceFingerprint: userAgent,
+            }
+          });
+
+          await db.user.update({
+            where: { id: referrer.id },
+            data: {
+              balance: { increment: bonus },
+              // Track total referred deposit volume so rewards can be based on sales amount
+              milestoneProgress: { increment: Math.round(amount) }
+            }
+          });
+
+          console.log(`💰 Referral bonus: ${bonus} added to referrer ${referrer.id}`);
+          
+          // Check for rank advancement
+          await checkAndUpdateRank(referrer.id);
+        } else {
+          console.log(`🚫 Fraud detected: Referral bonus blocked for referrer ${referrer.id}`);
+        }
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

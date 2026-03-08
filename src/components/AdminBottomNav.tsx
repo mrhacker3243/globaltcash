@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
-  LayoutDashboard, Users, ArrowDownCircle, Settings
+  LayoutDashboard, Users, ArrowDownCircle, ArrowUpCircle, Settings
 } from "lucide-react";
 
 export default function AdminBottomNav() {
@@ -12,6 +12,7 @@ export default function AdminBottomNav() {
     { icon: <LayoutDashboard size={22} />, label: "Home", href: "/admin/dashboard" },
     { icon: <Users size={22} />, label: "Users", href: "/admin/dashboard/investors" },
     { icon: <ArrowDownCircle size={22} />, label: "Deposits", href: "/admin/dashboard/deposits" },
+    { icon: <ArrowUpCircle size={22} />, label: "Withdrawals", href: "/admin/dashboard/withdrawals" },
     { icon: <Settings size={22} />, label: "Settings", href: "/admin/dashboard/settings" },
   ];
 

@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import YieldTrigger from "@/components/YieldTrigger";
+import AdminUserActions from "@/components/AdminUserActions";
 
 const formatPKR = (val: number) => {
   return "Rs. " + val.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -136,6 +137,7 @@ export default async function AdminDashboard() {
                 <thead>
                   <tr className="text-[9px] font-black uppercase text-gray-400 border-b border-gray-50 italic">
                     <th className="pb-4 px-4">User Details</th>
+                    <th className="pb-4 px-4">Role</th>
                     <th className="pb-4 px-4">Balance</th>
                     <th className="pb-4 px-4 text-center">Status</th>
                     <th className="pb-4 px-4 text-right">Actions</th>
@@ -148,21 +150,21 @@ export default async function AdminDashboard() {
                           <p className="text-[11px] font-black text-gray-900 uppercase italic">{user.email}</p>
                           <p className="text-[8px] text-gray-400 font-bold uppercase">ID: {user.id.slice(-8)}</p>
                        </td>
+                       <td className="py-5 px-4">
+                         <span className="text-[10px] font-black uppercase tracking-widest">
+                           {user.role}
+                         </span>
+                       </td>
                        <td className="py-5 px-4 font-black text-sm text-gray-900">
                           {formatPKR(user.balance)}
                        </td>
-                       <td className="py-5 px-4">
-                          <div className="flex flex-col items-center gap-1">
-                             <div className="w-20 h-1 bg-gray-100 rounded-full overflow-hidden">
-                                <div className="h-full bg-[#E11D48]" style={{ width: `${Math.min(user.deposits.length * 20, 100)}%` }} />
-                             </div>
-                             <span className="text-[7px] font-black text-gray-400 uppercase">{user.deposits.length} Plans</span>
-                          </div>
+                       <td className="py-5 px-4 text-center">
+                          <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-full ${user.isFrozen ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                            {user.isFrozen ? 'Frozen' : 'Active'}
+                          </span>
                        </td>
                        <td className="py-5 px-4 text-right">
-                          <button className="bg-white border border-gray-200 text-gray-900 px-4 py-2 rounded-lg text-[9px] font-black uppercase hover:bg-gray-900 hover:text-white transition-all shadow-sm">
-                            View Profile
-                          </button>
+                          <AdminUserActions userId={user.id} role={user.role} isFrozen={user.isFrozen} isCurrentUser={user.id === (session.user as any)?.id} />
                        </td>
                     </tr>
                   ))}

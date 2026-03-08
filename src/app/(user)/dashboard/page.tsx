@@ -13,6 +13,7 @@ const UserDashboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [showSupport, setShowSupport] = useState(false);
   const [showPlansModal, setShowPlansModal] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -32,6 +33,21 @@ const UserDashboard = () => {
   };
 
   useEffect(() => { fetchData(); }, []);
+
+  const referralLink = typeof window !== 'undefined' && user?.id
+    ? `${window.location.origin}/register?ref=${user.id}`
+    : "";
+
+  const copyReferralLink = async () => {
+    if (!referralLink) return;
+    try {
+      await navigator.clipboard.writeText(referralLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      alert("Unable to copy referral link. Please copy it manually.");
+    }
+  };
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen bg-[#F8FAFC]">
@@ -83,6 +99,33 @@ const UserDashboard = () => {
                 <MessageCircle size={16} className="text-[#E11D48]" /> Support
              </button>
           </div>
+        </div>
+
+        {/* --- REFERRAL SUMMARY --- */}
+        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 mb-10 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div>
+            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">Referral Dashboard</p>
+            <p className="text-sm font-black text-[#0F172A]">You have referred <span className="text-[#E11D48]">{user?.referralCount || 0}</span> user{(user?.referralCount || 0) === 1 ? "" : "s"}.</p>
+            <div className="mt-2 text-[10px] text-gray-500 space-y-1">
+              <p>Rank: <span className="font-black text-[#0F172A]">{user?.rankLevel || 'Starter'}</span></p>
+              {typeof user?.commissionRate === 'number' && (
+                <p>Commission: <span className="font-black text-[#E11D48]">{(user.commissionRate * 100).toFixed(2)}%</span></p>
+              )}
+              {user?.referrer && (
+                <p>Sponsored by: <span className="font-black text-[#0F172A]">{user.referrer.name || user.referrer.email}</span></p>
+              )}
+            </div>
+            <p className="text-[10px] text-gray-500 mt-1">Share your link to earn commissions on every successful plan purchase.</p>
+            {referralLink && (
+              <p className="text-[10px] font-black mt-2 text-gray-600 break-words">{referralLink}</p>
+            )}
+          </div>
+          <button
+            onClick={copyReferralLink}
+            className="w-full md:w-auto bg-[#0F172A] text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-black transition-all"
+          >
+            {copied ? "Copied" : "Copy Link"}
+          </button>
         </div>
 
         {/* --- STATS GRID --- */}
@@ -200,7 +243,7 @@ const UserDashboard = () => {
                     </div>
                     <div>
                       <h4 className="font-black text-sm text-[#0F172A]">{plan.planName || 'Pro Plan'}</h4>
-                      <p className="text-[9px] font-bold text-gray-400 uppercase">Started: {new Date(plan.createdAt).toLocaleDateString()}</p>
+                      <p className="text-[9px] font-bold text-gray-400 uppercase">Started: {new Date(plan.createdAt).toLocaleString()}</p>
                     </div>
                   </div>
                   <div className="text-right">
