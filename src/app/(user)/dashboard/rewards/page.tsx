@@ -38,22 +38,23 @@ export default function RewardsPage() {
   const [commissionRate, setCommissionRate] = useState<number | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [referralHistory, setReferralHistory] = useState<ReferralHistory[]>([]);
+  const [totalRevenueSales, setTotalRevenueSales] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'rewards' | 'history'>('rewards');
 
-  useEffect(() => {
-    fetchRewardsData();
-    fetchReferralHistory();
-  }, []);
-
+  // Define functions BEFORE useEffect
   const fetchRewardsData = async () => {
     try {
       const res = await fetch("/api/user/rewards");
       const data = await res.json();
+
       if (data.user) setUserRewards(data.user);
       if (typeof data.commissionRate === 'number') setCommissionRate(data.commissionRate);
       if (data.rewards) setRewards(data.rewards);
+      if (typeof data.totalRevenueSales === 'number') {
+        setTotalRevenueSales(data.totalRevenueSales);
+      }
     } catch (err) {
       console.error("Rewards Fetch Error:", err);
     } finally {
@@ -70,6 +71,11 @@ export default function RewardsPage() {
       console.error("History Fetch Error:", err);
     }
   };
+
+  useEffect(() => {
+    fetchRewardsData();
+    fetchReferralHistory();  // Now it's defined above
+  }, []);
 
   const handleClaim = async (rewardId: string) => {
     if (claiming) return;
@@ -98,8 +104,6 @@ export default function RewardsPage() {
       </div>
     );
   }
-
-  const current = userRewards?.milestoneProgress ?? 0;
 
   const formatNum = (num: number) => {
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
@@ -140,7 +144,7 @@ export default function RewardsPage() {
           </div>
         </div>
 
-        {/* 2. Stats Summary Card (UPGRADED) */}
+        {/* 2. Stats Summary Card */}
         {activeTab === 'rewards' && (
           <div className="bg-[#111827] p-6 sm:p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group border border-white/5">
             <div className="absolute top-0 right-0 w-64 h-64 bg-[#E11D48]/10 blur-[100px] rounded-full -mr-20 -mt-20 pointer-events-none" />
@@ -156,7 +160,7 @@ export default function RewardsPage() {
                 
                 <div className="flex flex-col">
                   <h2 className="text-4xl sm:text-6xl font-black text-white italic tracking-tighter leading-tight">
-                    Rs. {current.toLocaleString()}
+                    Rs. {formatNum(totalRevenueSales)}
                   </h2>
                   <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
                     <span className="h-[2px] w-4 bg-[#E11D48] rounded-full" />
@@ -192,14 +196,14 @@ export default function RewardsPage() {
               id: r.id, rank: `Rank 0${i+1}`, title: r.title, target: r.targetSales, reward: r.prizeType || r.title, image: defaultRankCards[i]?.image || defaultRankCards[0].image
             })) : defaultRankCards;
 
-            const nextIdx = rankCards.findIndex(c => current < c.target);
+            const nextIdx = rankCards.findIndex(c => totalRevenueSales < c.target);
             const activeIdx = nextIdx === -1 ? rankCards.length - 1 : nextIdx;
 
             return rankCards.map((card, index) => {
-              const isCompleted = current >= card.target;
+              const isCompleted = totalRevenueSales >= card.target;
               const isActive = index === activeIdx && !isCompleted;
               const isLocked = index > activeIdx;
-              const progress = isCompleted ? 100 : Math.min(100, (current / card.target) * 100);
+              const progress = isCompleted ? 100 : Math.min(100, (totalRevenueSales / card.target) * 100);
 
               return (
                 <div key={card.id} className={`group bg-white rounded-[2.5rem] border border-gray-200 p-5 sm:p-7 shadow-sm transition-all duration-500 flex flex-col ${isActive ? 'ring-2 ring-[#E11D48] bg-gradient-to-b from-white to-rose-50/20 shadow-xl' : ''} ${isLocked ? 'opacity-60' : ''}`}>
@@ -228,7 +232,7 @@ export default function RewardsPage() {
                          <div>
                             <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Progress</p>
                             <p className="text-sm font-black text-[#111827] italic">
-                              Rs. {formatNum(isCompleted ? card.target : current)} <span className="text-gray-300 mx-1">/</span> {formatNum(card.target)}
+                              Rs. {formatNum(isCompleted ? card.target : totalRevenueSales)} <span className="text-gray-300 mx-1">/</span> {formatNum(card.target)}
                             </p>
                          </div>
                          {isActive && <span className="text-[10px] font-black text-[#E11D48]">{Math.floor(progress)}%</span>}

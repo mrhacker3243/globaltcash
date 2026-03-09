@@ -7,71 +7,51 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id                 String          @id @default(cuid())
-  email              String          @unique
-  password           String
-  role               Role            @default(USER)
-  isFrozen           Boolean         @default(false)
-  balance            Float           @default(0.0)
-  createdAt          DateTime        @default(now())
-  name               String?
-  walletAddress      String?
-  twoFactorSecret    String?
-  isTwoFactorEnabled Boolean         @default(false)
-  referrerId         String?
-  totalDeposit       Float           @default(0.0)
-  referralCount      Int             @default(0)
-  rankLevel          String          @default("Starter")
-  milestoneProgress  Int             @default(0)
-  ipAddress          String?
-  deviceFingerprint  String?
-  deposits           Deposit[]
-  referrer           User?           @relation("UserReferrals", fields: [referrerId], references: [id])
-  referredUsers      User[]          @relation("UserReferrals")
-  withdrawals        Withdrawal[]
-  referrerReferrals  Referral[]      @relation("ReferrerReferrals")
-  refereeReferrals   Referral[]      @relation("RefereeReferrals")
-  claimedRewards     ClaimedReward[]
+// ──────────────────────────────────────────────
+// Enums first (they must be defined before being used)
+// ──────────────────────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
 }
 
-model SystemSetting {
-  id                 String   @id @default("global")
-  adminWalletAddress String?  @default("0x742d35Cc6634C0532925a3b844Bc454e4438f44e")
-  tonWalletAddress   String?
-  jazzCashNumber     String?  @default("03001234567")
-  jazzCashName       String?  @default("Faham Khan")
-  easyPaisaNumber    String?  @default("03459876543")
-  easyPaisaName      String?  @default("Faham Khan")
-  maintenanceMode    Boolean  @default(false)
-  updatedAt          DateTime @default(now()) @updatedAt
+enum Status {
+  PENDING
+  COMPLETED
+  REJECTED
+  ACTIVE
 }
+
+enum DepositStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ACTIVE
+}
+
+// ──────────────────────────────────────────────
+// Models – order matters: referenced models first
+// ──────────────────────────────────────────────
 
 model Deposit {
-  id              String         @id @default(cuid())
+  id              String        @id @default(cuid())
   userId          String
   amount          Float
-  roi             Float          @default(0.0)
+  roi             Float         @default(0.0)
   gateway         String?
-  planName        String?        @default("Manual Deposit")
-  transactionId   String?        @unique
-  transactionHash String?        @unique
+  planName        String?       @default("Manual Deposit")
+  transactionId   String?       @unique
+  transactionHash String?       @unique
   slipImage       String?
-  status          DepositStatus  @default(PENDING)
-  createdAt       DateTime       @default(now())
-  lastClaimedAt   DateTime       @default(now())
+  status          DepositStatus @default(PENDING)
+  createdAt       DateTime      @default(now())
+  lastClaimedAt   DateTime      @default(now())
   nextClaimAt     DateTime?
-  user            User           @relation(fields: [userId], references: [id])
-  profitRecords   ProfitRecord[]
-}
 
-model ProfitRecord {
-  id        String   @id @default(cuid())
-  depositId String
-  amount    Float
-  status    String   @default("PENDING")
-  createdAt DateTime @default(now())
-  deposit   Deposit  @relation(fields: [depositId], references: [id])
+  user            User          @relation(fields: [userId], references: [id])
+  profitRecords   ProfitRecord[]
+  referralCommissions Referral[]   // ← reverse relation for Referral → Deposit
 }
 
 model Withdrawal {
@@ -81,7 +61,75 @@ model Withdrawal {
   status    Status   @default(PENDING)
   userId    String
   createdAt DateTime @default(now())
+
   user      User     @relation(fields: [userId], references: [id])
+}
+
+model ProfitRecord {
+  id        String   @id @default(cuid())
+  depositId String
+  amount    Float
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+
+  deposit   Deposit  @relation(fields: [depositId], references: [id])
+}
+
+model ClaimedReward {
+  id         String   @id @default(cuid())
+  userId     String
+  rewardId   String
+  status     String   @default("PENDING")
+  claimedAt  DateTime @default(now())
+  approvedAt DateTime?
+
+  user       User     @relation(fields: [userId], references: [id])
+  reward     Reward   @relation(fields: [rewardId], references: [id])
+}
+
+// ──────────────────────────────────────────────
+
+model User {
+  id                 String         @id @default(cuid())
+  email              String         @unique
+  password           String
+  role               Role           @default(USER)
+  isFrozen           Boolean        @default(false)
+  balance            Float          @default(0.0)
+  createdAt          DateTime       @default(now())
+  name               String?
+  walletAddress      String?
+  twoFactorSecret    String?
+  isTwoFactorEnabled Boolean        @default(false)
+  referrerId         String?
+  totalDeposit       Float          @default(0.0)
+  referralCount      Int            @default(0)
+  rankLevel          String         @default("Starter")
+  milestoneProgress  Int            @default(0)
+  ipAddress          String?
+  deviceFingerprint  String?
+
+  referralEarnings   Float          @default(0.0)
+
+  deposits           Deposit[]
+  referrer           User?          @relation("UserReferrals", fields: [referrerId], references: [id])
+  referredUsers      User[]         @relation("UserReferrals")
+  withdrawals        Withdrawal[]
+  referrerReferrals  Referral[]     @relation("ReferrerReferrals")
+  refereeReferrals   Referral[]     @relation("RefereeReferrals")
+  claimedRewards     ClaimedReward[]
+}
+
+model SystemSetting {
+  id                String   @id @default("global")
+  adminWalletAddress String?  @default("0x742d35Cc6634C0532925a3b844Bc454e4438f44e")
+  tonWalletAddress  String?
+  jazzCashNumber    String?  @default("03001234567")
+  jazzCashName      String?  @default("Faham Khan")
+  easyPaisaNumber   String?  @default("03459876543")
+  easyPaisaName     String?  @default("Faham Khan")
+  maintenanceMode   Boolean  @default(false)
+  updatedAt         DateTime @updatedAt
 }
 
 model Plan {
@@ -108,6 +156,7 @@ model Reward {
   active         Boolean         @default(true)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
+
   claimedRewards ClaimedReward[]
 }
 
@@ -119,48 +168,23 @@ model ReferralRank {
   minActiveReferrals Int      @default(0)
   active             Boolean  @default(true)
   createdAt          DateTime @default(now())
-  updatedAt          DateTime @default(now()) @updatedAt
+  updatedAt          DateTime @updatedAt
 }
 
 model Referral {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   referrerId        String
   refereeId         String
   commissionAmount  Float
-  status            String   @default("PENDING")
+  status            String    @default("PENDING")
+  depositId         String?
+  approvedAt        DateTime?
+
   ipAddress         String?
   deviceFingerprint String?
-  createdAt         DateTime @default(now())
-  referrer          User     @relation("ReferrerReferrals", fields: [referrerId], references: [id])
-  referee           User     @relation("RefereeReferrals", fields: [refereeId], references: [id])
-}
+  createdAt         DateTime  @default(now())
 
-model ClaimedReward {
-  id         String    @id @default(cuid())
-  userId     String
-  rewardId   String
-  status     String    @default("PENDING")
-  claimedAt  DateTime  @default(now())
-  approvedAt DateTime?
-  user       User      @relation(fields: [userId], references: [id])
-  reward     Reward    @relation(fields: [rewardId], references: [id])
-}
-
-enum Role {
-  USER
-  ADMIN
-}
-
-enum Status {
-  PENDING
-  COMPLETED
-  REJECTED
-  ACTIVE
-}
-
-enum DepositStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  ACTIVE
+  referrer          User      @relation("ReferrerReferrals", fields: [referrerId], references: [id])
+  referee           User      @relation("RefereeReferrals", fields: [refereeId], references: [id])
+  deposit           Deposit?  @relation(fields: [depositId], references: [id])
 }

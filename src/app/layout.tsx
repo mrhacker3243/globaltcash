@@ -30,10 +30,14 @@ export default function RootLayout({
   // Dashboard ya Admin check
   const isDashboard = pathname?.startsWith("/dashboard") || pathname?.startsWith("/admin");
 
+  // Suppress hydration warning only in development mode
+  const suppressHydrationWarning = process.env.NODE_ENV === "development";
+
   return (
     <html lang="en" className="dark">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-zinc-950`}
+        suppressHydrationWarning={suppressHydrationWarning}  // ← This fixes the ontouchstart hydration error
       >
         <AuthProvider>
           <TonProvider>
