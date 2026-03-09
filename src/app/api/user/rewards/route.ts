@@ -4,7 +4,7 @@ import { getCommissionPercentForRank } from "@/lib/rankManager";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(){
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
