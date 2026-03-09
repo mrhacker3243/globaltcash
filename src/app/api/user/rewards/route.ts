@@ -7,28 +7,31 @@ import { NextResponse } from "next/server";
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    const userId = session.user.id;
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const user = await db.user.findUnique({
-      where: { id: userId },
+      where: { email: session.user.email },
       select: {
+        id: true,
         referralCount: true,
         rankLevel: true,
         milestoneProgress: true,
       },
     });
 
-    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
 
-    // ── Calculate total sales from direct referrals ──
+    // Calculate total sales from direct referrals
     const salesStats = await db.user.aggregate({
-      where: { referrerId: userId },
+      where: { referrerId: user.id },
       _sum: { totalDeposit: true },
     });
 
-    const totalSales = salesStats._sum.totalDeposit || 0;
+    const totalRevenueSales = salesStats._sum.totalDeposit || 0;
 
     const rewards = await db.reward.findMany({
       where: { active: true },
@@ -41,7 +44,7 @@ export async function GET() {
       user,
       commissionRate,
       rewards,
-      totalRevenueSales: totalSales,    // ← this must be sent
+      totalRevenueSales,
     });
   } catch (error) {
     console.error("Rewards API error:", error);
