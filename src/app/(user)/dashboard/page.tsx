@@ -327,7 +327,7 @@ const UserDashboard = () => {
                 </div>
                 <ChevronRight size={24} />
               </a>
-              <a href="https://wa.me/923000000000" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between bg-gradient-to-r from-green-50 to-green-100 p-5 rounded-2xl font-bold text-lg hover:from-green-100 hover:to-green-200 transition-all shadow-sm">
+              <a href="https://wa.me/923345687574" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between bg-gradient-to-r from-green-50 to-green-100 p-5 rounded-2xl font-bold text-lg hover:from-green-100 hover:to-green-200 transition-all shadow-sm">
                 <div className="flex items-center gap-3">
                   <MessageCircle size={28} className="text-green-600" />
                   <span>WhatsApp</span>

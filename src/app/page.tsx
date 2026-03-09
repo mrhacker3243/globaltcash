@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link"; 
 import { 
   ShieldCheck, Zap, MessageSquare, Bell, Lock, 
-  ShieldAlert, ChevronDown, Smartphone, LogIn, UserPlus, TrendingUp, X, Coins
+  ShieldAlert, ChevronDown, Smartphone, LogIn, UserPlus, TrendingUp, X, Coins, Star
 } from "lucide-react";
 
 // --- Data Structures ---
@@ -14,7 +14,7 @@ const CONSTANT_PLANS = [
   { name: "Supreme Basic", profit: 3.5, range: "Rs. 25000 - 50000", min: 25000, max: 50000, contract: "4 Months", popular: false },
   { name: "Supreme Edge", profit: 5.0, range: "Rs. 55000 - 100000", min: 55000, max: 100000, contract: "6 Months", popular: true },
   { name: "Supreme Pro", profit: 7.5, range: "Rs. 110000 - 500000", min: 110000, max: 500000, contract: "12 Months", popular: false },
-  { name: "Supreme", profit: 10.0, range: "Rs. 550000 - 2000000", min: 550000, max: 2000000, contract: "15 Months", popular: false },
+  { name: "Supreme Pro Max", profit: 10.0, range: "Rs. 550000 - 2000000", min: 550000, max: 2000000, contract: "15 Months", popular: false },
 ];
 
 const LIVE_ACTIVITY = [
@@ -25,6 +25,19 @@ const LIVE_ACTIVITY = [
   { name: "Sajid Khan", action: "Withdrew", amount: "Rs. 45,000", time: "18 mins ago" },
 ];
 
+const TESTIMONIALS = [
+  { name: "Arsalan Khan", city: "Lahore", text: "Global Capital has completely changed my passive income game. Highly recommended!" },
+  { name: "Sara Ahmed", city: "Karachi", text: "Fast withdrawals and great support. The Supreme Edge plan is worth every rupee." },
+  { name: "Bilal Sheikh", city: "Islamabad", text: "Finally a platform that delivers what it promises. My profits are consistent." },
+  { name: "Umer Farooq", city: "Multan", text: "The daily returns are amazing. I've already withdrawn my principal amount." },
+  { name: "Dania Malik", city: "Faisalabad", text: "Safe, secure, and transparent. Best investment platform in Pakistan right now." },
+  { name: "Zohaib Hassan", city: "Sialkot", text: "User interface is so smooth. Managed to double my investment in 3 months." },
+  { name: "Ayesha Noor", city: "Rawalpindi", text: "I was skeptical at first, but the instant JazzCash withdrawals won me over." },
+  { name: "Rizwan Ali", city: "Peshawar", text: "Professional team and great profit margins. Happy with my Supreme Pro plan." },
+  { name: "Noman Shah", city: "Quetta", text: "The calculator tool helped me plan my finances perfectly. Great job!" },
+  { name: "Fatima Gul", city: "Gujranwala", text: "A reliable way to grow savings. Customer support is always there to help." },
+];
+
 // --- Main Page Component ---
 
 export default function LandingPage() {
@@ -32,7 +45,6 @@ export default function LandingPage() {
   const [calcAmount, setCalcAmount] = useState(5000);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  // Profit Calculation Logic (Fixed)
   const dailyReturn = (calcAmount * selectedPlan.profit) / 100;
   const monthlyReturn = dailyReturn * 30;
   const contractMonths = parseInt(selectedPlan.contract);
@@ -67,7 +79,7 @@ export default function LandingPage() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[300px] xs:h-[500px] bg-[#E11D48]/5 blur-[80px] xs:blur-[100px] -z-10 rounded-full" />
         <div className="inline-flex items-center gap-2 bg-white border border-gray-100 px-3 xs:px-4 py-2 rounded-full shadow-sm mb-6 xs:mb-8">
           <span className="flex h-1.5 w-1.5 rounded-full bg-[#E11D48] animate-pulse" />
-          <span className="text-[8px] xs:text-[9px] font-black tracking-[0.15em] xs:tracking-[0.2em] uppercase text-gray-500 italic">Official Global Trust Node</span>
+          <span className="text-[8px] xs:text-[9px] font-black tracking-[0.15em] xs:tracking-[0.2em] uppercase text-gray-500 italic">Official Global Trust Web</span>
         </div>
 
         <h1 className="text-4xl sm:text-7xl md:text-8xl lg:text-[9rem] font-black mb-6 leading-[0.9] tracking-tight text-gray-900 uppercase italic">
@@ -135,7 +147,6 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Result Card */}
           <div className="bg-[#0F172A] p-6 xs:p-10 rounded-[2.5rem] xs:rounded-[3rem] text-white shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-5"><TrendingUp size={150} /></div>
             <div className="space-y-6 xs:space-y-8 relative z-10 text-left">
@@ -187,6 +198,33 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* 🟢 4.5 TESTIMONIALS SECTION (NEW) */}
+      <section className="py-16 xs:py-20 bg-[#F3F4F6]/50 border-y border-gray-100 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 mb-10 text-center">
+            <h2 className="text-3xl xs:text-4xl font-black uppercase italic tracking-tighter">Verified <span className="text-[#E11D48]">Traders</span></h2>
+            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-2">Hear from our growing community</p>
+        </div>
+        <div className="flex whitespace-nowrap gap-6 animate-marquee-slow">
+          {[...TESTIMONIALS, ...TESTIMONIALS].map((t, i) => (
+            <div key={i} className="inline-block w-[280px] xs:w-[350px] bg-white p-6 xs:p-8 rounded-[2rem] border border-gray-100 shadow-sm whitespace-normal">
+              <div className="flex gap-1 mb-4">
+                {[...Array(5)].map((_, i) => <Star key={i} size={12} className="text-[#E11D48]" fill="#E11D48" />)}
+              </div>
+              <p className="text-[11px] xs:text-[13px] font-bold italic text-gray-600 leading-relaxed mb-6">"{t.text}"</p>
+              <div className="flex items-center gap-3 border-t border-gray-50 pt-4">
+                <div className="w-10 h-10 rounded-full bg-[#E11D48]/10 flex items-center justify-center text-[#E11D48] font-black text-xs">
+                    {t.name.charAt(0)}
+                </div>
+                <div>
+                    <p className="text-[10px] font-black uppercase text-gray-900">{t.name}</p>
+                    <p className="text-[8px] font-bold uppercase text-gray-400 tracking-widest">{t.city}, PK</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* 5. FAQ SECTION */}
       <section className="py-16 xs:py-20 px-4 max-w-4xl mx-auto">
         <h2 className="text-3xl xs:text-4xl font-black uppercase italic text-center mb-10 xs:mb-12 tracking-tighter">Common <span className="text-[#E11D48]">Queries.</span></h2>
@@ -213,7 +251,7 @@ export default function LandingPage() {
         </h3>
         <p className="text-gray-400 font-bold uppercase text-[9px] xs:text-[10px] tracking-[0.3em] xs:tracking-[0.5em] mb-10 xs:mb-12 italic">Established in 2026 • Secure Network Node</p>
         <Link href="/register" className="bg-[#E11D48] text-white px-12 xs:px-20 py-6 xs:py-8 rounded-[2rem] font-black uppercase tracking-widest text-xs xs:text-sm shadow-2xl shadow-rose-200 inline-block transition-transform active:scale-95">
-          Access Terminal
+          Access Account
         </Link>
       </footer>
 
@@ -222,10 +260,22 @@ export default function LandingPage() {
           from { transform: translateX(0); }
           to { transform: translateX(-50%); }
         }
+        @keyframes marquee-slow {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+        }
         .animate-marquee {
           display: flex;
           width: max-content;
           animation: marquee 30s linear infinite;
+        }
+        .animate-marquee-slow {
+          display: flex;
+          width: max-content;
+          animation: marquee-slow 50s linear infinite;
+        }
+        .animate-marquee-slow:hover {
+          animation-play-state: paused;
         }
         input[type='range']::-webkit-slider-thumb {
           -webkit-appearance: none;
