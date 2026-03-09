@@ -111,7 +111,7 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        {/* REFERRAL CARD – GLASSMORPHISM */}
+        {/* REFERRAL CARD */}
         <div className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-3xl shadow-xl p-6 md:p-8 mb-10">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
@@ -147,9 +147,8 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        {/* STATS GRID – MODERN CARDS */}
+        {/* STATS GRID */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
-          {/* Balance Card – Highlight */}
           <div className="col-span-1 sm:col-span-2 lg:col-span-1 bg-gradient-to-br from-gray-900 to-black text-white p-8 rounded-3xl shadow-2xl relative overflow-hidden">
             <div className="absolute -right-12 -top-12 w-48 h-48 bg-rose-600/20 rounded-full blur-3xl"></div>
             <p className="text-xs font-bold uppercase tracking-widest text-white/60 mb-2">Available Balance</p>
@@ -159,7 +158,6 @@ const UserDashboard = () => {
             </h2>
           </div>
 
-          {/* Invested */}
           <div className="bg-white/80 backdrop-blur-md border border-gray-200/80 p-6 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 group">
             <div className="flex items-center justify-between mb-4">
               <Zap className="text-amber-500" size={28} />
@@ -169,7 +167,6 @@ const UserDashboard = () => {
             <h2 className="text-3xl font-black text-gray-900">Rs. {totalInvested.toLocaleString()}</h2>
           </div>
 
-          {/* Withdrawn */}
           <div className="bg-white/80 backdrop-blur-md border border-gray-200/80 p-6 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 group">
             <div className="flex items-center justify-between mb-4">
               <CreditCard className="text-rose-600" size={28} />
@@ -179,7 +176,6 @@ const UserDashboard = () => {
             <h2 className="text-3xl font-black text-gray-900">Rs. {totalWithdrawn.toLocaleString()}</h2>
           </div>
 
-          {/* My Plans */}
           <div className="bg-white/80 backdrop-blur-md border border-gray-200/80 p-6 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 group flex flex-col">
             <div className="flex justify-between items-start mb-4">
               <ShoppingBag className="text-indigo-600" size={28} />
@@ -195,75 +191,76 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        {/* HISTORY SECTION */}
-        <div className="bg-white/80 backdrop-blur-md border border-gray-200/80 rounded-3xl shadow-xl overflow-hidden">
-          <div className="px-6 md:px-10 py-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white">
-            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-3">
-              <History className="text-rose-600" size={22} /> Transaction Timeline
+        {/* 🟢 UPDATED HISTORY SECTION - 320px COMPACT FITTED WITH DATE & TIME */}
+        <div className="bg-white/80 backdrop-blur-md border border-gray-200/80 rounded-[2.5rem] shadow-xl overflow-hidden mb-6">
+          <div className="px-6 py-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-gray-50/50 to-white">
+            <h2 className="text-sm font-black text-gray-900 flex items-center gap-2 uppercase tracking-tight">
+              <History className="text-rose-600" size={20} /> Transaction Timeline
             </h2>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px] text-left">
-              <thead className="bg-gray-50/80">
-                <tr className="text-xs font-bold text-gray-600 uppercase tracking-wider">
-                  <th className="px-6 py-4">Activity</th>
-                  <th className="px-6 py-4 hidden md:table-cell">Date</th>
-                  <th className="px-6 py-4 text-right">Amount</th>
-                  <th className="px-6 py-4 hidden md:table-cell text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {combinedHistory.length > 0 ? combinedHistory.map((item: any, i: number) => (
-                  <tr key={i} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white ${
-                          item.type === 'DEPOSIT' ? 'bg-green-500' : 
-                          item.type === 'WITHDRAW' ? 'bg-red-500' : 'bg-indigo-500'
-                        }`}>
-                          {item.type === 'DEPOSIT' ? <ArrowDownCircle size={18}/> : 
-                           item.type === 'WITHDRAW' ? <ArrowUpCircle size={18}/> : <Zap size={18}/>}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900">{item.description}</p>
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            {new Date(item.date).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 hidden md:table-cell text-sm text-gray-600">
-                      {new Date(item.date).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-5 text-right font-bold">
-                      <span className={item.type === 'WITHDRAW' ? 'text-red-600' : 'text-emerald-600'}>
-                        {item.type === 'WITHDRAW' ? '-' : '+'} Rs. {item.amount?.toLocaleString() || '—'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-5 hidden md:table-cell text-center">
-                      <span className={`inline-block px-3 py-1 text-xs font-bold rounded-full ${
-                        item.status === 'APPROVED' ? 'bg-green-100 text-green-700' : 
-                        item.status === 'PENDING' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+          <div className="w-full">
+            {combinedHistory.length > 0 ? (
+              <div className="divide-y divide-gray-50">
+                {combinedHistory.map((item: any, i: number) => (
+                  <div key={i} className="px-5 py-5 hover:bg-gray-50/50 transition-colors flex items-center justify-between gap-3">
+                    
+                    {/* Left: Icon & Description + Date/Time */}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-sm ${
+                        item.type === 'DEPOSIT' ? 'bg-emerald-500' : 
+                        item.type === 'WITHDRAW' ? 'bg-rose-600' : 'bg-indigo-600'
                       }`}>
-                        {item.status || 'ACTIVE'}
-                      </span>
-                    </td>
-                  </tr>
-                )) : (
-                  <tr>
-                    <td colSpan={4} className="p-12 text-center text-gray-400 font-medium">
-                      No transactions found yet
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                        {item.type === 'DEPOSIT' ? <ArrowDownCircle size={18}/> : 
+                         item.type === 'WITHDRAW' ? <ArrowUpCircle size={18}/> : <Zap size={18}/>}
+                      </div>
+                      
+                      <div className="truncate">
+                        <p className="text-[11px] font-black text-gray-900 uppercase tracking-tight truncate">
+                          {item.description}
+                        </p>
+                        {/* 🟢 Date & Time Added Back and Compacted */}
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter mt-0.5 leading-none">
+                          {new Date(item.date).toLocaleString('en-GB', { 
+                            day: '2-digit', 
+                            month: 'short', 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            hour12: true 
+                          })}
+                        </p>
+                        <span className={`text-[8px] font-black uppercase tracking-widest block mt-1 ${
+                            item.status === 'APPROVED' ? 'text-emerald-600' : 
+                            item.status === 'PENDING' ? 'text-amber-600' : 'text-rose-600'
+                          }`}>
+                            {item.status || 'ACTIVE'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Right: Amount */}
+                    <div className="text-right shrink-0">
+                      <p className={`text-[13px] font-black italic tracking-tighter ${item.type === 'WITHDRAW' ? 'text-rose-600' : 'text-emerald-600'}`}>
+                        {item.type === 'WITHDRAW' ? '-' : '+'} Rs. {item.amount?.toLocaleString()}
+                      </p>
+                    </div>
+
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-16 text-center">
+                <div className="inline-flex items-center justify-center w-14 h-14 bg-gray-50 rounded-full mb-3">
+                  <History className="text-gray-200" size={24} />
+                </div>
+                <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest px-6">No transaction records found</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* MODALS – Improved styling */}
+      {/* MODALS */}
       {showPlansModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden transform transition-all scale-100">
