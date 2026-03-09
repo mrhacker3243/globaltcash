@@ -132,8 +132,9 @@ export default function Navbar() {
           
           <div className="h-px bg-gray-100" />
           
-          <Link href="/login" onClick={() => setIsOpen(false)} className="bg-[#E11D48] text-white text-center py-5 rounded-3xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-rose-200 flex items-center justify-center gap-2">
-            <LogIn size={14} /> Login Account
+          <Link href="/login" className="bg-[#E11D48] px-10 py-3 rounded-2xl text-white font-black hover:shadow-xl hover:shadow-rose-400/40 transition-all active:scale-95 flex items-center gap-2 uppercase shadow-lg shadow-rose-200">
+              <LogIn size={14} /> Login Account
+            </Link>
         </div>
       )}
     </nav>
