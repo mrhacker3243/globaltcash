@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link"; 
 import { 
   ShieldCheck, Zap, MessageSquare, Bell, Lock, 
@@ -31,14 +31,7 @@ const TESTIMONIALS = [
   { name: "Bilal Sheikh", city: "Islamabad", text: "Finally a platform that delivers what it promises. My profits are consistent." },
   { name: "Umer Farooq", city: "Multan", text: "The daily returns are amazing. I've already withdrawn my principal amount." },
   { name: "Dania Malik", city: "Faisalabad", text: "Safe, secure, and transparent. Best investment platform in Pakistan right now." },
-  { name: "Zohaib Hassan", city: "Sialkot", text: "User interface is so smooth. Managed to double my investment in 3 months." },
-  { name: "Ayesha Noor", city: "Rawalpindi", text: "I was skeptical at first, but the instant JazzCash withdrawals won me over." },
-  { name: "Rizwan Ali", city: "Peshawar", text: "Professional team and great profit margins. Happy with my Supreme Pro plan." },
-  { name: "Noman Shah", city: "Quetta", text: "The calculator tool helped me plan my finances perfectly. Great job!" },
-  { name: "Fatima Gul", city: "Gujranwala", text: "A reliable way to grow savings. Customer support is always there to help." },
 ];
-
-// --- Main Page Component ---
 
 export default function LandingPage() {
   const [selectedPlan, setSelectedPlan] = useState(CONSTANT_PLANS[0]);
@@ -54,26 +47,6 @@ export default function LandingPage() {
   return (
     <div className="bg-[#F9FAFB] text-gray-800 min-h-screen selection:bg-[#E11D48]/10 font-sans overflow-x-hidden">
       
-      {/* 🟢 NAVBAR */}
-      <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 xs:px-6 h-16 xs:h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-[#E11D48] p-1.5 xs:p-2 rounded-lg text-white"><Zap size={18} fill="white" /></div>
-            <span className="font-black uppercase tracking-tighter text-lg xs:text-xl italic text-gray-900 leading-none">
-              Global <span className="text-[#E11D48]">Capital</span>
-            </span>
-          </div>
-          <div className="flex items-center gap-2 xs:gap-4">
-            <Link href="/login" className="hidden xs:flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-[#E11D48] transition-colors">
-              <LogIn size={14} /> Login
-            </Link>
-            <Link href="/register" className="bg-[#0F172A] text-white px-4 xs:px-6 py-2.5 xs:py-3 rounded-xl font-black uppercase tracking-widest text-[9px] xs:text-[10px] shadow-lg flex items-center gap-2 transition-transform active:scale-95">
-              <UserPlus size={14} /> Register
-            </Link>
-          </div>
-        </div>
-      </nav>
-
       {/* 1. HERO SECTION */}
       <header className="pt-32 xs:pt-40 pb-16 px-4 text-center max-w-7xl mx-auto relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[300px] xs:h-[500px] bg-[#E11D48]/5 blur-[80px] xs:blur-[100px] -z-10 rounded-full" />
@@ -94,7 +67,7 @@ export default function LandingPage() {
 
         <div className="flex flex-col sm:flex-row justify-center gap-4 px-6">
           <Link href="/register" className="bg-[#E11D48] text-white px-8 xs:px-10 py-4 xs:py-5 rounded-2xl font-black uppercase tracking-widest text-[10px] xs:text-xs shadow-xl shadow-rose-100 transition-transform active:scale-95">Start Investing</Link>
-          <Link href="#calculator" className="bg-white border border-gray-200 px-8 xs:px-10 py-4 xs:py-5 rounded-2xl font-black uppercase tracking-widest text-[10px] xs:text-xs hover:bg-gray-50 transition-all">Calculate Profit</Link>
+          <Link href="#calculator" className="bg-white border border-gray-200 px-8 xs:px-10 py-4 xs:py-5 rounded-2xl font-black uppercase tracking-widest text-[10px] xs:text-xs hover:bg-gray-50 transition-all text-center">Calculate Profit</Link>
         </div>
       </header>
 
@@ -118,11 +91,11 @@ export default function LandingPage() {
       </section>
 
       {/* 3. CALCULATOR SECTION */}
-      <section id="calculator" className="py-16 xs:py-20 px-4 max-w-6xl mx-auto">
+      <section id="calculator" className="py-16 xs:py-20 px-4 max-w-6xl mx-auto scroll-mt-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 xs:gap-10 items-start">
           <div className="space-y-6">
-            <h2 className="text-3xl xs:text-4xl md:text-6xl font-black italic uppercase tracking-tighter leading-none">Calculate <span className="text-[#E11D48]">Profit</span></h2>
-            <div className="p-5 xs:p-8 bg-white rounded-[2rem] border border-gray-100 shadow-sm">
+            <h2 className="text-3xl xs:text-4xl md:text-6xl font-black italic uppercase tracking-tighter leading-none text-left">Calculate <span className="text-[#E11D48]">Profit</span></h2>
+            <div className="p-5 xs:p-8 bg-white rounded-[2rem] border border-gray-100 shadow-sm text-left">
               <label className="text-[9px] font-black uppercase text-gray-400 mb-4 block tracking-widest">1. Select Investment Plan</label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {CONSTANT_PLANS.map((p) => (
@@ -147,9 +120,9 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="bg-[#0F172A] p-6 xs:p-10 rounded-[2.5rem] xs:rounded-[3rem] text-white shadow-2xl relative overflow-hidden">
+          <div className="bg-[#0F172A] p-6 xs:p-10 rounded-[2.5rem] xs:rounded-[3rem] text-white shadow-2xl relative overflow-hidden text-left">
             <div className="absolute top-0 right-0 p-8 opacity-5"><TrendingUp size={150} /></div>
-            <div className="space-y-6 xs:space-y-8 relative z-10 text-left">
+            <div className="space-y-6 xs:space-y-8 relative z-10">
               <div className="flex justify-between border-b border-white/10 pb-4">
                 <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Daily ({selectedPlan.profit}%)</span>
                 <span className="text-xl font-black italic">Rs. {dailyReturn.toLocaleString()}</span>
@@ -175,7 +148,10 @@ export default function LandingPage() {
       </section>
 
       {/* 4. INVESTMENT PLANS GRID */}
-      <section className="py-16 xs:py-20 px-4 max-w-7xl mx-auto">
+      <section id="plans" className="py-16 xs:py-20 px-4 max-w-7xl mx-auto scroll-mt-24">
+        <div className="text-center mb-12">
+            <h2 className="text-3xl xs:text-4xl font-black uppercase italic tracking-tighter">Investment <span className="text-[#E11D48]">Nodes.</span></h2>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 xs:gap-8">
           {CONSTANT_PLANS.map((plan, i) => (
             <div key={i} className="p-6 xs:p-8 rounded-[2.5rem] xs:rounded-[3rem] bg-white border border-gray-100 hover:border-rose-200 transition-all shadow-sm relative overflow-hidden group text-left">
@@ -198,11 +174,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 🟢 4.5 TESTIMONIALS SECTION (NEW) */}
+      {/* 5. TESTIMONIALS */}
       <section className="py-16 xs:py-20 bg-[#F3F4F6]/50 border-y border-gray-100 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 mb-10 text-center">
             <h2 className="text-3xl xs:text-4xl font-black uppercase italic tracking-tighter">Verified <span className="text-[#E11D48]">Traders</span></h2>
-            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-2">Hear from our growing community</p>
         </div>
         <div className="flex whitespace-nowrap gap-6 animate-marquee-slow">
           {[...TESTIMONIALS, ...TESTIMONIALS].map((t, i) => (
@@ -211,7 +186,7 @@ export default function LandingPage() {
                 {[...Array(5)].map((_, i) => <Star key={i} size={12} className="text-[#E11D48]" fill="#E11D48" />)}
               </div>
               <p className="text-[11px] xs:text-[13px] font-bold italic text-gray-600 leading-relaxed mb-6">"{t.text}"</p>
-              <div className="flex items-center gap-3 border-t border-gray-50 pt-4">
+              <div className="flex items-center gap-3 border-t border-gray-50 pt-4 text-left">
                 <div className="w-10 h-10 rounded-full bg-[#E11D48]/10 flex items-center justify-center text-[#E11D48] font-black text-xs">
                     {t.name.charAt(0)}
                 </div>
@@ -225,8 +200,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 5. FAQ SECTION */}
-      <section className="py-16 xs:py-20 px-4 max-w-4xl mx-auto">
+      {/* 6. FAQ SECTION */}
+      <section id="faq" className="py-16 xs:py-20 px-4 max-w-4xl mx-auto scroll-mt-24">
         <h2 className="text-3xl xs:text-4xl font-black uppercase italic text-center mb-10 xs:mb-12 tracking-tighter">Common <span className="text-[#E11D48]">Queries.</span></h2>
         <div className="space-y-4">
           {[
@@ -238,18 +213,18 @@ export default function LandingPage() {
               <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full p-5 xs:p-6 flex justify-between items-center font-black uppercase text-[9px] xs:text-[10px] tracking-widest text-left">
                 {faq.q} <ChevronDown className={`transition-transform shrink-0 ml-2 ${openFaq === i ? 'rotate-180' : ''}`} size={16} />
               </button>
-              {openFaq === i && <div className="p-6 pt-0 text-[10px] font-bold text-gray-400 uppercase leading-relaxed">{faq.a}</div>}
+              {openFaq === i && <div className="p-6 pt-0 text-[10px] font-bold text-gray-400 uppercase leading-relaxed text-left">{faq.a}</div>}
             </div>
           ))}
         </div>
       </section>
 
-      {/* 6. FOOTER SECTION */}
+      {/* 7. FOOTER SECTION */}
       <footer className="py-20 xs:py-24 text-center px-4 bg-white border-t border-gray-100">
         <h3 className="text-5xl sm:text-7xl md:text-9xl font-black mb-8 xs:mb-10 italic uppercase tracking-tighter leading-[0.85] text-gray-900">
           Join the <br/> <span className="text-[#E11D48]">Circle.</span>
         </h3>
-        <p className="text-gray-400 font-bold uppercase text-[9px] xs:text-[10px] tracking-[0.3em] xs:tracking-[0.5em] mb-10 xs:mb-12 italic">Established in 2026 • Secure Network Node</p>
+        <p className="text-gray-400 font-bold uppercase text-[9px] xs:text-[10px] tracking-[0.3em] xs:tracking-[0.5em] mb-10 xs:mb-12 italic">Established in 2023 • Secure Network</p>
         <Link href="/register" className="bg-[#E11D48] text-white px-12 xs:px-20 py-6 xs:py-8 rounded-[2rem] font-black uppercase tracking-widest text-xs xs:text-sm shadow-2xl shadow-rose-200 inline-block transition-transform active:scale-95">
           Access Account
         </Link>
