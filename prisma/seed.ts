@@ -38,7 +38,7 @@ async function main() {
     { name: "Supreme Basic", roi: 3.5, duration: "4 Months", minAmount: 25000, maxAmount: 50000, popular: false, icon: "Trophy" },
     { name: "Supreme Edge", roi: 5.0, duration: "6 Months", minAmount: 55000, maxAmount: 100000, popular: true, icon: "Trophy" },
     { name: "Supreme Pro", roi: 7.5, duration: "12 Months", minAmount: 110000, maxAmount: 500000, popular: false, icon: "Crown" },
-    { name: "Supreme", roi: 10.0, duration: "15 Months", minAmount: 550000, maxAmount: 2000000, popular: false, icon: "Crown" }
+    { name: "Supreme Pro Max", roi: 10.0, duration: "15 Months", minAmount: 550000, maxAmount: 2000000, popular: false, icon: "Crown" }
   ]
 
   // Clear existing plans first to avoid name conflicts with old unique names
