@@ -52,7 +52,7 @@ export default function LandingPage() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[300px] xs:h-[500px] bg-[#E11D48]/5 blur-[80px] xs:blur-[100px] -z-10 rounded-full" />
         <div className="inline-flex items-center gap-2 bg-white border border-gray-100 px-3 xs:px-4 py-2 rounded-full shadow-sm mb-6 xs:mb-8">
           <span className="flex h-1.5 w-1.5 rounded-full bg-[#E11D48] animate-pulse" />
-          <span className="text-[8px] xs:text-[9px] font-black tracking-[0.15em] xs:tracking-[0.2em] uppercase text-gray-500 italic">Official Global Trust Web</span>
+          <span className="text-[8px] xs:text-[9px] font-black tracking-[0.15em] xs:tracking-[0.2em] uppercase text-gray-500 italic">Official Global Trusted Web</span>
         </div>
 
         <h1 className="text-4xl sm:text-7xl md:text-8xl lg:text-[9rem] font-black mb-6 leading-[0.9] tracking-tight text-gray-900 uppercase italic">
@@ -150,7 +150,7 @@ export default function LandingPage() {
       {/* 4. INVESTMENT PLANS GRID */}
       <section id="plans" className="py-16 xs:py-20 px-4 max-w-7xl mx-auto scroll-mt-24">
         <div className="text-center mb-12">
-            <h2 className="text-3xl xs:text-4xl font-black uppercase italic tracking-tighter">Investment <span className="text-[#E11D48]">Nodes.</span></h2>
+            <h2 className="text-3xl xs:text-4xl font-black uppercase italic tracking-tighter">Investment <span className="text-[#E11D48]">Plans.</span></h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 xs:gap-8">
           {CONSTANT_PLANS.map((plan, i) => (
