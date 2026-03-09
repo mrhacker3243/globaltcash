@@ -152,7 +152,7 @@ const UserDashboard = () => {
           {/* Balance Card – Highlight */}
           <div className="col-span-1 sm:col-span-2 lg:col-span-1 bg-gradient-to-br from-gray-900 to-black text-white p-8 rounded-3xl shadow-2xl relative overflow-hidden">
             <div className="absolute -right-12 -top-12 w-48 h-48 bg-rose-600/20 rounded-full blur-3xl"></div>
-            <p className="text-xs font-bold uppercase tracking-widest text-white/60 mb-2">Total Balance</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-white/60 mb-2">Available Balance</p>
             <h2 className="text-4xl md:text-5xl font-black">
               <span className="text-rose-500 text-2xl md:text-3xl mr-2">Rs.</span>
               {(user?.balance || 0).toLocaleString()}
@@ -163,7 +163,7 @@ const UserDashboard = () => {
           <div className="bg-white/80 backdrop-blur-md border border-gray-200/80 p-6 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 group">
             <div className="flex items-center justify-between mb-4">
               <Zap className="text-amber-500" size={28} />
-              <span className="text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1 rounded-full">Active</span>
+              <span className="text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1 rounded-full">Active ✔ </span>
             </div>
             <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Invested</p>
             <h2 className="text-3xl font-black text-gray-900">Rs. {totalInvested.toLocaleString()}</h2>
