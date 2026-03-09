@@ -13,7 +13,6 @@ const UserDashboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [showSupport, setShowSupport] = useState(false);
   const [showPlansModal, setShowPlansModal] = useState(false);
-  const [copied, setCopied] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -33,21 +32,6 @@ const UserDashboard = () => {
   };
 
   useEffect(() => { fetchData(); }, []);
-
-  const referralLink = typeof window !== 'undefined' && user?.id
-    ? `${window.location.origin}/register?ref=${user.id}`
-    : "";
-
-  const copyReferralLink = async () => {
-    if (!referralLink) return;
-    try {
-      await navigator.clipboard.writeText(referralLink);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      alert("Unable to copy referral link. Please copy it manually.");
-    }
-  };
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -111,42 +95,6 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        {/* REFERRAL CARD */}
-        <div className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-3xl shadow-xl p-6 md:p-8 mb-10">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-              <p className="text-xs font-bold text-rose-600 uppercase tracking-widest mb-1">Referral Dashboard</p>
-              <p className="text-lg font-bold text-gray-900">
-                You have referred <span className="text-rose-600">{user?.referralCount || 0}</span> user{(user?.referralCount || 0) === 1 ? "" : "s"}.
-              </p>
-              <div className="mt-3 space-y-1 text-sm">
-                <p>Rank: <span className="font-bold text-gray-900">{user?.rankLevel || 'Starter'}</span></p>
-                {typeof user?.commissionRate === 'number' && (
-                  <p>Commission: <span className="font-bold text-rose-600">{(user.commissionRate * 100).toFixed(2)}%</span></p>
-                )}
-                {user?.referrer && (
-                  <p>Sponsored by: <span className="font-bold">{user.referrer.name || user.referrer.email}</span></p>
-                )}
-              </div>
-              <p className="text-xs text-gray-500 mt-3">Share your link to earn commissions on every successful plan purchase.</p>
-              {referralLink && (
-                <p className="text-xs font-mono text-gray-600 mt-2 break-all">{referralLink}</p>
-              )}
-            </div>
-
-            <button
-              onClick={copyReferralLink}
-              className={`w-full md:w-auto px-8 py-4 rounded-2xl font-bold text-sm uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 shadow-md ${
-                copied 
-                  ? 'bg-emerald-600 text-white' 
-                  : 'bg-gradient-to-r from-rose-600 to-pink-600 text-white hover:shadow-2xl hover:scale-[1.02]'
-              }`}
-            >
-              {copied ? "Copied!" : "Copy Link"}
-            </button>
-          </div>
-        </div>
-
         {/* STATS GRID */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
           <div className="col-span-1 sm:col-span-2 lg:col-span-1 bg-gradient-to-br from-gray-900 to-black text-white p-8 rounded-3xl shadow-2xl relative overflow-hidden">
@@ -191,7 +139,7 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        {/* 🟢 UPDATED HISTORY SECTION - 320px COMPACT FITTED WITH DATE & TIME */}
+        {/* TRANSACTION HISTORY SECTION */}
         <div className="bg-white/80 backdrop-blur-md border border-gray-200/80 rounded-[2.5rem] shadow-xl overflow-hidden mb-6">
           <div className="px-6 py-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-gray-50/50 to-white">
             <h2 className="text-sm font-black text-gray-900 flex items-center gap-2 uppercase tracking-tight">
@@ -204,8 +152,6 @@ const UserDashboard = () => {
               <div className="divide-y divide-gray-50">
                 {combinedHistory.map((item: any, i: number) => (
                   <div key={i} className="px-5 py-5 hover:bg-gray-50/50 transition-colors flex items-center justify-between gap-3">
-                    
-                    {/* Left: Icon & Description + Date/Time */}
                     <div className="flex items-center gap-3 min-w-0">
                       <div className={`shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-sm ${
                         item.type === 'DEPOSIT' ? 'bg-emerald-500' : 
@@ -219,7 +165,6 @@ const UserDashboard = () => {
                         <p className="text-[11px] font-black text-gray-900 uppercase tracking-tight truncate">
                           {item.description}
                         </p>
-                        {/* 🟢 Date & Time Added Back and Compacted */}
                         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter mt-0.5 leading-none">
                           {new Date(item.date).toLocaleString('en-GB', { 
                             day: '2-digit', 
@@ -238,13 +183,11 @@ const UserDashboard = () => {
                       </div>
                     </div>
 
-                    {/* Right: Amount */}
                     <div className="text-right shrink-0">
                       <p className={`text-[13px] font-black italic tracking-tighter ${item.type === 'WITHDRAW' ? 'text-rose-600' : 'text-emerald-600'}`}>
                         {item.type === 'WITHDRAW' ? '-' : '+'} Rs. {item.amount?.toLocaleString()}
                       </p>
                     </div>
-
                   </div>
                 ))}
               </div>
