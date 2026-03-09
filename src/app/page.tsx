@@ -177,7 +177,7 @@ export default function LandingPage() {
       {/* 5. TESTIMONIALS */}
       <section className="py-16 xs:py-20 bg-[#F3F4F6]/50 border-y border-gray-100 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 mb-10 text-center">
-            <h2 className="text-3xl xs:text-4xl font-black uppercase italic tracking-tighter">Verified <span className="text-[#E11D48]">Traders</span></h2>
+            <h2 className="text-3xl xs:text-4xl font-black uppercase italic tracking-tighter">Verified <span className="text-[#E11D48]">Partners</span></h2>
         </div>
         <div className="flex whitespace-nowrap gap-6 animate-marquee-slow">
           {[...TESTIMONIALS, ...TESTIMONIALS].map((t, i) => (

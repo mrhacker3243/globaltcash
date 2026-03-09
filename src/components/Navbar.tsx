@@ -133,8 +133,7 @@ export default function Navbar() {
           <div className="h-px bg-gray-100" />
           
           <Link href="/login" onClick={() => setIsOpen(false)} className="bg-[#E11D48] text-white text-center py-5 rounded-3xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-rose-200 flex items-center justify-center gap-2">
-            <LogIn size={14} /> Login to Terminal
-          </Link>
+            <LogIn size={14} /> Login Account
         </div>
       )}
     </nav>
