@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-// Absolute path use kar rahe hain jo Next.js mein standard hai
-import { prisma } from "@/lib/db"; 
+// Aapki db.ts file se 'db' import kar rahe hain
+import { db } from "@/lib/db"; 
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
@@ -23,9 +23,10 @@ export async function POST(req: Request) {
     } 
 
     else if (text === "/stats") {
+      // 'db' variable use kar rahe hain jo aapki file se aa raha hai
       const [userCount, pendingDeposits] = await Promise.all([
-        prisma.user.count(),
-        prisma.deposit.count({ where: { status: "PENDING" } })
+        db.user.count(),
+        db.deposit.count({ where: { status: "PENDING" } })
       ]);
 
       const statsMsg = `📊 *Global Trust Cash - Live Stats*\n\n` +
@@ -45,6 +46,8 @@ export async function POST(req: Request) {
 
 async function sendTelegram(chatId: number, text: string) {
   try {
+    if (!TELEGRAM_TOKEN) return;
+    
     await fetch(`${TELEGRAM_API}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
