@@ -3,7 +3,7 @@ import { sendTelegram, sendTelegramPhoto } from "../../utils";
 
 export async function showPendingDeposits(chatId: number) {
   const pendingDeposits = await db.deposit.findMany({
-    where: { status: "PENDING" as any },
+    where: { status: "PENDING" }, // Matches DepositStatus Enum
     include: { user: true },
     take: 10
   });
@@ -16,7 +16,7 @@ export async function showPendingDeposits(chatId: number) {
 
   const buttons = {
     inline_keyboard: pendingDeposits.map((dep: any) => [
-      { text: `💰 ${dep.amount} PKR - ${dep.user.name}`, callback_data: `view_dep_${dep.id}` }
+      { text: `💰 ${dep.amount} PKR - ${dep.user.name || 'User'}`, callback_data: `view_dep_${dep.id}` }
     ])
   };
   buttons.inline_keyboard.push([{ text: "🔙 Back to Admin", callback_data: "show_dash" }]);
@@ -25,7 +25,7 @@ export async function showPendingDeposits(chatId: number) {
 }
 
 export async function viewPendingDeposit(chatId: number, depositId: string) {
-  const dep: any = await db.deposit.findUnique({
+  const dep = await db.deposit.findUnique({
     where: { id: depositId },
     include: { user: true }
   });
@@ -33,8 +33,9 @@ export async function viewPendingDeposit(chatId: number, depositId: string) {
   if (!dep) return await sendTelegram(chatId, "❌ Deposit not found.");
 
   const msg = `🧐 *Review Deposit*\n\n` +
-              `👤 User: ${dep.user.name}\n` +
+              `👤 User: ${dep.user.name || 'N/A'}\n` +
               `💰 Amount: ${dep.amount} PKR\n` +
+              `💳 Gateway: ${dep.gateway || 'N/A'}\n` +
               `📅 Date: ${dep.createdAt.toLocaleString()}`;
 
   const buttons = {
@@ -47,9 +48,10 @@ export async function viewPendingDeposit(chatId: number, depositId: string) {
     ]
   };
 
-  if (dep.receiptUrl) {
-    await sendTelegramPhoto(chatId, dep.receiptUrl, msg, buttons);
+  // Check if slipImage exists (Telegram File ID)
+  if (dep.slipImage) {
+    await sendTelegramPhoto(chatId, dep.slipImage, msg, buttons);
   } else {
-    await sendTelegram(chatId, msg, buttons);
+    await sendTelegram(chatId, msg + "\n\n⚠️ No slip image found.", buttons);
   }
 }

@@ -46,12 +46,56 @@ export async function handleUpdate(body: any) {
       case "admin_page_deposits": if (user.role === "ADMIN") return await showPendingDeposits(chatId); break;
     }
 
-    // --- DEPOSIT FLOW ---
+    // --- ADMIN ACTIONS (FIXED FOR ENUMS & BALANCE) ---
+    if (user.role === "ADMIN") {
+      if (data.startsWith("view_dep_")) return await viewPendingDeposit(chatId, data.replace("view_dep_", ""));
+
+      if (data.startsWith("approve_dep_")) {
+        const depId = data.replace("approve_dep_", "");
+        try {
+          const result = await db.$transaction(async (tx) => {
+            const dep = await tx.deposit.findUnique({ where: { id: depId }, include: { user: true } });
+            if (!dep || dep.status !== "PENDING") throw new Error("Processed");
+
+            // Update status to APPROVED (from your DepositStatus enum)
+            await tx.deposit.update({ 
+              where: { id: depId }, 
+              data: { status: "APPROVED" } 
+            });
+
+            // Update User Balance & Total Deposit
+            return await tx.user.update({
+              where: { id: dep.userId },
+              data: { 
+                balance: { increment: dep.amount },
+                totalDeposit: { increment: dep.amount }
+              }
+            });
+          });
+
+          await sendTelegram(chatId, `✅ Approved! Balance added to ${result.name}.`);
+          if (result.telegramId) {
+            await sendTelegram(Number(result.telegramId), `🎉 Your deposit of *${result.balance} PKR* has been *Approved*!`);
+          }
+          return await showPendingDeposits(chatId);
+        } catch (err) {
+          return await sendTelegram(chatId, "❌ Already processed or error occurred.");
+        }
+      }
+
+      if (data.startsWith("reject_dep_")) {
+        const depId = data.replace("reject_dep_", "");
+        await db.deposit.update({ where: { id: depId }, data: { status: "REJECTED" } });
+        await sendTelegram(chatId, "❌ Deposit Rejected.");
+        return await showPendingDeposits(chatId);
+      }
+    }
+
+    // --- USER DEPOSIT FLOW ---
     if (data.startsWith("dep_meth_")) {
-      const method = data.split("_")[2]; // easypaisa, jazzcash, usdt
+      const method = data.split("_")[2];
       (userState as any)[chatId] = { step: "waiting_for_dep_amount", method };
 
-      // Fetch Global Settings for account details
       const settings = await db.systemSetting.findUnique({ where: { id: "global" } });
 
       let instruction = "";
@@ -63,7 +107,7 @@ export async function handleUpdate(body: any) {
         instruction = `💳 *USDT (TRC20) Address:*\n\`${settings?.adminWalletAddress}\`\nNetwork: *TRON (TRC20)*`;
       }
 
-      return await sendTelegram(chatId, `${instruction}\n\n💰 *Enter Amount to Deposit (PKR/USDT):*`);
+      return await sendTelegram(chatId, `${instruction}\n\n💰 *Enter Amount to Deposit:*`);
     }
 
     // --- INPUT HANDLING ---
@@ -76,37 +120,28 @@ export async function handleUpdate(body: any) {
       }
     }
 
-    // --- PHOTO UPLOAD (Matches Your Schema) ---
+    // --- PHOTO UPLOAD ---
     if (photo && (userState[chatId] as any)?.step === "waiting_for_dep_slip") {
       const state = userState[chatId] as any;
-      
       try {
         await db.deposit.create({
           data: {
             userId: user.id,
             amount: state.amount,
-            gateway: state.method.toUpperCase(), // Match schema 'gateway'
+            gateway: state.method.toUpperCase(),
             slipImage: photo[photo.length - 1].file_id, // Match schema 'slipImage'
-            status: "PENDING", // Match DepositStatus enum
+            status: "PENDING",
           }
         });
-
         delete userState[chatId];
-        return await sendTelegram(chatId, "✅ *Slip submitted successfully!*\nAdmin will verify and update your balance.");
+        return await sendTelegram(chatId, "✅ *Slip submitted!*\nVerification pending.");
       } catch (err) {
-        console.error(err);
-        return await sendTelegram(chatId, "❌ Database Error. Please try again.");
+        return await sendTelegram(chatId, "❌ Database Error.");
       }
-    }
-
-    // --- ADMIN ACTIONS ---
-    if (user.role === "ADMIN") {
-      if (data.startsWith("view_dep_")) return await viewPendingDeposit(chatId, data.replace("view_dep_", ""));
-      // Approve logic using your schema's Status enum and Balance field
     }
   }
 
-  // 3. Login Flow
+  // --- LOGIN FLOW ---
   if (data.startsWith("setlang_")) {
     (userState as any)[chatId] = { step: "waiting_for_email", lang: data.split("_")[1] };
     return await sendTelegram(chatId, "📧 Send Email:");
