@@ -1,104 +1,132 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db"; 
+import { db } from "@/lib/db";
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
 
-// Temporary state store (In-memory) - Production mein Redis behtar hai
-const userState: Record<number, { step: string; email?: string }> = {};
+// State and Language storage
+const userState: Record<number, { step: string; email?: string; lang: string }> = {};
+
+const translations: any = {
+  en: {
+    welcome: "Welcome to *Global Trust Cash*. Choose an option:",
+    login: "🔐 Login", register: "📝 Register", site: "🌐 Website",
+    askEmail: "📧 Please send your *Email Address*:",
+    askPass: "🔑 Now send your *Password*:",
+    success: "✅ Login Successful!",
+    dashboard: "🏠 Dashboard", balance: "Balance", ref: "Referral Link"
+  },
+  ur: {
+    welcome: "*Global Trust Cash* میں خوش آمدید۔ نیچے دیے گئے بٹن استعمال کریں:",
+    login: "🔐 لاگ ان", register: "📝 رجسٹریشن", site: "🌐 ویب سائٹ",
+    askEmail: "📧 براہ کرم اپنا *ای میل* لکھیں:",
+    askPass: "🔑 اب اپنا *پاس ورڈ* لکھیں:",
+    success: "✅ لاگ ان کامیاب رہا!",
+    dashboard: "🏠 ڈیش بورڈ", balance: "بیلنس", ref: "ریفرل لنک"
+  },
+  hi: {
+    welcome: "*Global Trust Cash* में आपका स्वागत है। कृपया एक विकल्प चुनें:",
+    login: "🔐 लॉगिन", register: "📝 रजिस्टर", site: "🌐 वेबसाइट",
+    askEmail: "📧 कृपया अपना *ईमेल* भेजें:",
+    askPass: "🔑 अब अपना *पासवर्ड* भेजें:",
+    success: "✅ लॉगिन सफल रहा!",
+    dashboard: "🏠 डैशबोर्ड", balance: "बैलेंस", ref: "रेफरल लिंक"
+  },
+  ar: {
+    welcome: "أهلاً بك في *Global Trust Cash*. اختر خياراً:",
+    login: "🔐 تسجيل الدخول", register: "📝 تسجيل", site: "🌐 الموقع",
+    askEmail: "📧 يرجى إرسال *البريد الإلكتروني*:",
+    askPass: "🔑 الآن أرسل *كلمة المرور*:",
+    success: "✅ تم تسجيل الدخول بنجاح!",
+    dashboard: "🏠 لوحة التحكم", balance: "الرصيد", ref: "رابط الإحالة"
+  }
+};
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const message = body.message;
-    const callbackQuery = body.callback_query;
+    const msg = body.message;
+    const cb = body.callback_query;
+    const chatId = msg ? msg.chat.id : cb.message.chat.id;
+    const text = msg?.text || "";
+    const data = cb?.data || "";
 
-    const chatId = message ? message.chat.id : callbackQuery.message.chat.id;
-    const text = message?.text || "";
-    const data = callbackQuery?.data || "";
-
-    // 1. Initial Buttons (/start)
+    // 1. Language Selection on Start
     if (text === "/start") {
-      delete userState[chatId];
-      const welcomeMsg = "💰 *Welcome to Global Trust Cash*\n\nPlease select an option below:";
-      const buttons = {
+      const langButtons = {
         inline_keyboard: [
-          [{ text: "🔐 Login Account", callback_data: "ask_email" }, { text: "📝 Register Now", url: "https://globaltcash.up.railway.app/register" }],
-          [{ text: "🌐 Visit Official Website", url: "https://globaltcash.up.railway.app/" }]
+          [{ text: "English 🇺🇸", callback_data: "setlang_en" }, { text: "اردو 🇵🇰", callback_data: "setlang_ur" }],
+          [{ text: "हिन्दी 🇮🇳", callback_data: "setlang_hi" }, { text: "العربية 🇸🇦", callback_data: "setlang_ar" }]
         ]
       };
-      await sendTelegram(chatId, welcomeMsg, buttons);
+      await sendTelegram(chatId, "Please select your language / زبان منتخب کریں:", langButtons);
       return NextResponse.json({ success: true });
     }
 
-    // 2. Handle Button Clicks
-    if (data === "ask_email") {
-      userState[chatId] = { step: "waiting_for_email" };
-      await sendTelegram(chatId, "📧 Please send your *Email Address*:");
+    // 2. Set Language and Show Main Menu
+    if (data.startsWith("setlang_")) {
+      const selectedLang = data.split("_")[1];
+      userState[chatId] = { step: "idle", lang: selectedLang };
+      const t = translations[selectedLang];
+
+      const mainMenu = {
+        inline_keyboard: [
+          [{ text: t.login, callback_data: "ask_email" }, { text: t.register, url: "https://globaltcash.up.railway.app/register" }],
+          [{ text: t.site, url: "https://globaltcash.up.railway.app/" }]
+        ]
+      };
+      await sendTelegram(chatId, t.welcome, mainMenu);
     }
 
-    if (data === "show_dashboard") {
+    // 3. Login Flow with Language Support
+    const currentLang = userState[chatId]?.lang || "en";
+    const t = translations[currentLang];
+
+    if (data === "ask_email") {
+      userState[chatId] = { ...userState[chatId], step: "waiting_for_email" };
+      await sendTelegram(chatId, t.askEmail);
+    }
+
+    if (text && userState[chatId]?.step === "waiting_for_email") {
+      userState[chatId] = { ...userState[chatId], step: "waiting_for_password", email: text };
+      await sendTelegram(chatId, t.askPass);
+    } 
+    
+    else if (text && userState[chatId]?.step === "waiting_for_password") {
+      const user = await db.user.findUnique({ where: { email: userState[chatId].email } });
+      if (user && user.password === text) {
+        await db.user.update({ where: { email: user.email }, data: { telegramId: chatId.toString() } });
+        userState[chatId].step = "idle";
+        
+        const dashButton = { inline_keyboard: [[{ text: t.dashboard, callback_data: "show_dash" }]] };
+        await sendTelegram(chatId, t.success, dashButton);
+      } else {
+        await sendTelegram(chatId, "❌ Error / غلطی");
+        userState[chatId].step = "idle";
+      }
+    }
+
+    // 4. Dashboard with Language
+    if (data === "show_dash") {
       const user = await db.user.findUnique({ where: { telegramId: chatId.toString() } });
       if (user) {
-        const dashMsg = `🏠 *User Dashboard*\n\n` +
-                        `👤 Name: ${user.name}\n` +
-                        `💵 Balance: ${user.balance} PKR\n` +
-                        `👥 Referrals: ${user.referralCount}\n` +
-                        `🏆 Rank: ${user.rankLevel}\n\n` +
-                        `🔗 *Your Referral Link:*\nhttps://globaltcash.up.railway.app/register?ref=${user.id}`;
+        const dashMsg = `🏠 *${t.dashboard}*\n\n💰 ${t.balance}: ${user.balance} PKR\n🔗 ${t.ref}:\nhttps://globaltcash.up.railway.app/register?ref=${user.id}`;
         await sendTelegram(chatId, dashMsg);
       }
     }
 
-    // 3. Handle Text Input (Email & Password steps)
-    if (text && !text.startsWith("/")) {
-      const state = userState[chatId];
-
-      if (state?.step === "waiting_for_email") {
-        userState[chatId] = { step: "waiting_for_password", email: text };
-        await sendTelegram(chatId, "🔑 Great! Now send your *Password*:");
-      } 
-      
-      else if (state?.step === "waiting_for_password") {
-        const email = state.email!;
-        const password = text;
-
-        const user = await db.user.findUnique({ where: { email } });
-
-        if (user && user.password === password) {
-          await db.user.update({
-            where: { email },
-            data: { telegramId: chatId.toString() }
-          });
-          delete userState[chatId];
-          
-          const successMsg = `✅ *Login Successful!*\nWelcome back ${user.name}.`;
-          const dashButton = {
-            inline_keyboard: [[{ text: "📊 Open Dashboard", callback_data: "show_dashboard" }]]
-          };
-          await sendTelegram(chatId, successMsg, dashButton);
-        } else {
-          await sendTelegram(chatId, "❌ Invalid email or password. Click /start to try again.");
-          delete userState[chatId];
-        }
-      }
-    }
-
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Bot Error:", error);
+  } catch (err) {
     return NextResponse.json({ error: "failed" }, { status: 200 });
   }
 }
 
 async function sendTelegram(chatId: number, text: string, replyMarkup: any = null) {
-  try {
-    const body: any = { chat_id: chatId, text, parse_mode: "Markdown" };
-    if (replyMarkup) body.reply_markup = replyMarkup;
-    await fetch(`${TELEGRAM_API}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-  } catch (err) { console.error(err); }
+  const body: any = { chat_id: chatId, text, parse_mode: "Markdown" };
+  if (replyMarkup) body.reply_markup = replyMarkup;
+  await fetch(`${TELEGRAM_API}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
 }
