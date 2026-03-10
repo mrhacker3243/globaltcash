@@ -23,15 +23,80 @@ export async function handleUpdate(body: any) {
 
   const user = await db.user.findUnique({ where: { telegramId: String(chatId) } });
 
-  // 1. Dashboard Redirects
+  // 1. Dashboard Redirects & Auth Menu
   if (text === "/start" || data === "show_dash") {
     if (user) {
       return user.role === "ADMIN" ? await showAdminDashboard(chatId, user) : await showUserDashboard(chatId, user);
-    } else if (text === "/start") {
-      const langBtns = {
-        inline_keyboard: [[{ text: "English 🇺🇸", callback_data: "setlang_en" }, { text: "اردو 🇵🇰", callback_data: "setlang_ur" }]]
+    } else {
+      const authBtns = {
+        inline_keyboard: [
+          [{ text: "🔐 Login", callback_data: "auth_login" }, { text: "📝 Register", callback_data: "auth_register" }]
+        ]
       };
-      return await sendTelegram(chatId, "Welcome to GTC! Select language to Login:", langBtns);
+      return await sendTelegram(chatId, "Welcome to *Global Trust Cash*! Please login or register to continue:", authBtns);
+    }
+  }
+
+  // --- REGISTRATION & LOGIN FLOWS ---
+  if (data === "auth_login") {
+    (userState as any)[chatId] = { step: "waiting_for_email" };
+    return await sendTelegram(chatId, "📧 Please enter your *Email*:");
+  }
+
+  if (data === "auth_register") {
+    (userState as any)[chatId] = { step: "reg_name" };
+    return await sendTelegram(chatId, "👤 Registration: Enter your *Full Name*:");
+  }
+
+  // --- INPUT HANDLING FOR AUTH ---
+  if (text && userState[chatId]) {
+    const state = userState[chatId] as any;
+
+    // Login Steps
+    if (state.step === "waiting_for_email") {
+      state.email = text.trim().toLowerCase();
+      state.step = "waiting_for_password";
+      return await sendTelegram(chatId, "🔑 Enter your *Password*:");
+    }
+    if (state.step === "waiting_for_password") {
+      const loginUser = await db.user.findUnique({ where: { email: state.email } });
+      if (loginUser && await bcrypt.compare(text.trim(), loginUser.password)) {
+        await db.user.update({ where: { id: loginUser.id }, data: { telegramId: String(chatId) } });
+        delete userState[chatId];
+        return await showUserDashboard(chatId, loginUser);
+      }
+      return await sendTelegram(chatId, "❌ Invalid credentials. Try /start again.");
+    }
+
+    // Registration Steps
+    if (state.step === "reg_name") {
+      state.regName = text.trim();
+      state.step = "reg_email";
+      return await sendTelegram(chatId, `Nice to meet you ${state.regName}! Now enter your *Email*:`);
+    }
+    if (state.step === "reg_email") {
+      const email = text.trim().toLowerCase();
+      const existing = await db.user.findUnique({ where: { email } });
+      if (existing) return await sendTelegram(chatId, "❌ This email already exists. Enter a different one:");
+      state.regEmail = email;
+      state.step = "reg_pass";
+      return await sendTelegram(chatId, "🔐 Create a *Password* (min 6 characters):");
+    }
+    if (state.step === "reg_pass") {
+      if (text.length < 6) return await sendTelegram(chatId, "⚠️ Password too short. Try again:");
+      const hashedPassword = await bcrypt.hash(text.trim(), 10);
+      const newUser = await db.user.create({
+        data: {
+          name: state.regName,
+          email: state.regEmail,
+          password: hashedPassword,
+          telegramId: String(chatId),
+          balance: 0,
+          role: "USER"
+        }
+      });
+      delete userState[chatId];
+      return await showUserDashboard(chatId, newUser);
     }
   }
 
@@ -46,47 +111,44 @@ export async function handleUpdate(body: any) {
       case "admin_page_deposits": if (user.role === "ADMIN") return await showPendingDeposits(chatId); break;
     }
 
-    // --- ADMIN ACTIONS (FIXED FOR ENUMS & BALANCE) ---
+    // --- ADMIN ACTIONS ---
     if (user.role === "ADMIN") {
       if (data.startsWith("view_dep_")) return await viewPendingDeposit(chatId, data.replace("view_dep_", ""));
 
       if (data.startsWith("approve_dep_")) {
         const depId = data.replace("approve_dep_", "");
         try {
-          const result = await db.$transaction(async (tx) => {
+          const notificationData = await db.$transaction(async (tx) => {
             const dep = await tx.deposit.findUnique({ where: { id: depId }, include: { user: true } });
             if (!dep || dep.status !== "PENDING") throw new Error("Processed");
 
-            // Update status to APPROVED (from your DepositStatus enum)
-            await tx.deposit.update({ 
-              where: { id: depId }, 
-              data: { status: "APPROVED" } 
+            await tx.deposit.update({ where: { id: depId }, data: { status: "APPROVED" } });
+
+            const updatedUser = await tx.user.update({
+              where: { id: dep.userId },
+              data: { balance: { increment: dep.amount }, totalDeposit: { increment: dep.amount } }
             });
 
-            // Update User Balance & Total Deposit
-            return await tx.user.update({
-              where: { id: dep.userId },
-              data: { 
-                balance: { increment: dep.amount },
-                totalDeposit: { increment: dep.amount }
-              }
-            });
+            return { telegramId: updatedUser.telegramId, depositedAmount: dep.amount, userName: updatedUser.name };
           });
 
-          await sendTelegram(chatId, `✅ Approved! Balance added to ${result.name}.`);
-          if (result.telegramId) {
-            await sendTelegram(Number(result.telegramId), `🎉 Your deposit of *${result.balance} PKR* has been *Approved*!`);
+          await sendTelegram(chatId, `✅ Approved! *${notificationData.depositedAmount} PKR* added to ${notificationData.userName}.`);
+          if (notificationData.telegramId) {
+            await sendTelegram(Number(notificationData.telegramId), `🎉 *Deposit Approved!*\n\nApka *${notificationData.depositedAmount} PKR* ka deposit verify ho gaya hy. ✨`);
           }
           return await showPendingDeposits(chatId);
         } catch (err) {
-          return await sendTelegram(chatId, "❌ Already processed or error occurred.");
+          return await sendTelegram(chatId, "❌ Error processing approval.");
         }
       }
 
       if (data.startsWith("reject_dep_")) {
         const depId = data.replace("reject_dep_", "");
-        await db.deposit.update({ where: { id: depId }, data: { status: "REJECTED" } });
+        const dep = await db.deposit.update({ where: { id: depId }, data: { status: "REJECTED" }, include: { user: true } });
         await sendTelegram(chatId, "❌ Deposit Rejected.");
+        if (dep.user.telegramId) {
+            await sendTelegram(Number(dep.user.telegramId), `❌ *Deposit Rejected!*\n\nApka *${dep.amount} PKR* ka deposit reject kar diya gaya hy.`);
+        }
         return await showPendingDeposits(chatId);
       }
     }
@@ -95,73 +157,36 @@ export async function handleUpdate(body: any) {
     if (data.startsWith("dep_meth_")) {
       const method = data.split("_")[2];
       (userState as any)[chatId] = { step: "waiting_for_dep_amount", method };
-
       const settings = await db.systemSetting.findUnique({ where: { id: "global" } });
-
       let instruction = "";
       if (method === "easypaisa") {
         instruction = `🏦 *EasyPaisa Details:*\nNumber: \`${settings?.easyPaisaNumber}\`\nName: *${settings?.easyPaisaName}*`;
       } else if (method === "jazzcash") {
         instruction = `🏦 *JazzCash Details:*\nNumber: \`${settings?.jazzCashNumber}\`\nName: *${settings?.jazzCashName}*`;
       } else if (method === "usdt") {
-        instruction = `💳 *USDT (TRC20) Address:*\n\`${settings?.adminWalletAddress}\`\nNetwork: *TRON (TRC20)*`;
+        instruction = `💳 *USDT Address:*\n\`${settings?.adminWalletAddress}\``;
       }
-
       return await sendTelegram(chatId, `${instruction}\n\n💰 *Enter Amount to Deposit:*`);
     }
 
-    // --- INPUT HANDLING ---
-    if (text && userState[chatId]) {
+    if (text && (userState[chatId] as any)?.step === "waiting_for_dep_amount") {
       const state = userState[chatId] as any;
-      if (state.step === "waiting_for_dep_amount") {
-        state.amount = parseFloat(text);
-        state.step = "waiting_for_dep_slip";
-        return await sendTelegram(chatId, "📸 *Upload Screenshot / Payment Slip:*");
-      }
+      state.amount = parseFloat(text);
+      state.step = "waiting_for_dep_slip";
+      return await sendTelegram(chatId, "📸 *Upload Screenshot / Payment Slip:*");
     }
 
-    // --- PHOTO UPLOAD ---
     if (photo && (userState[chatId] as any)?.step === "waiting_for_dep_slip") {
       const state = userState[chatId] as any;
       try {
         await db.deposit.create({
-          data: {
-            userId: user.id,
-            amount: state.amount,
-            gateway: state.method.toUpperCase(),
-            slipImage: photo[photo.length - 1].file_id, // Match schema 'slipImage'
-            status: "PENDING",
-          }
+          data: { userId: user.id, amount: state.amount, gateway: state.method.toUpperCase(), slipImage: photo[photo.length - 1].file_id, status: "PENDING" }
         });
         delete userState[chatId];
         return await sendTelegram(chatId, "✅ *Slip submitted!*\nVerification pending.");
       } catch (err) {
         return await sendTelegram(chatId, "❌ Database Error.");
       }
-    }
-  }
-
-  // --- LOGIN FLOW ---
-  if (data.startsWith("setlang_")) {
-    (userState as any)[chatId] = { step: "waiting_for_email", lang: data.split("_")[1] };
-    return await sendTelegram(chatId, "📧 Send Email:");
-  }
-
-  if (text && userState[chatId]) {
-    const state = userState[chatId] as any;
-    if (state.step === "waiting_for_email") {
-      state.email = text.trim().toLowerCase();
-      state.step = "waiting_for_password";
-      return await sendTelegram(chatId, "🔑 Enter Password:");
-    }
-    if (state.step === "waiting_for_password") {
-      const loginUser = await db.user.findUnique({ where: { email: state.email } });
-      if (loginUser && await bcrypt.compare(text.trim(), loginUser.password)) {
-        await db.user.update({ where: { id: loginUser.id }, data: { telegramId: String(chatId) } });
-        delete userState[chatId];
-        return await showUserDashboard(chatId, loginUser);
-      }
-      return await sendTelegram(chatId, "❌ Invalid credentials.");
     }
   }
 }

@@ -12,57 +12,34 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        try {
-          console.log('🔐 Login attempt for:', credentials?.email);
-          
-          if (!credentials?.email || !credentials?.password) {
-            console.error('❌ Missing credentials');
-            throw new Error("Email and password are required");
-          }
-
-          // Test database connection
-          try {
-            await db.$connect();
-            console.log('✅ Database connected');
-          } catch (dbError: any) {
-            console.error('❌ Database connection failed:', dbError.message);
-            throw new Error("Database connection failed. Please try again later.");
-          }
-
-          const user = await db.user.findUnique({ 
-            where: { email: credentials.email } 
-          });
-
-          if (!user) {
-            console.error('❌ No user found with email:', credentials.email);
-            throw new Error("No user found with this email");
-          }
-
-          console.log('✅ User found:', user.email, 'Role:', user.role);
-
-          const isValid = await bcrypt.compare(credentials.password, user.password);
-          if (!isValid) {
-            console.error('❌ Invalid password for:', credentials.email);
-            throw new Error("Incorrect password");
-          }
-
-          if ((user as any).isFrozen) {
-            console.warn('⚠️ Login attempt for frozen user:', credentials.email);
-            throw new Error("Your account has been frozen. Please contact support.");
-          }
-
-          console.log('✅ Login successful for:', user.email);
-
-          return { 
-            id: user.id, 
-            email: user.email, 
-            role: user.role,
-            name: (user as any).name 
-          };
-        } catch (error: any) {
-          console.error('❌ Authorization error:', error.message);
-          throw error;
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Email and password are required");
         }
+
+        const user = await db.user.findUnique({ 
+          where: { email: credentials.email } 
+        });
+
+        if (!user) {
+          throw new Error("No user found with this email");
+        }
+
+        const isValid = await bcrypt.compare(credentials.password, user.password);
+        if (!isValid) {
+          throw new Error("Incorrect password");
+        }
+
+        // Schema check for frozen accounts
+        if (user.isFrozen) {
+          throw new Error("Your account has been frozen. Please contact support.");
+        }
+
+        return { 
+          id: user.id, 
+          email: user.email, 
+          role: user.role,
+          name: user.name 
+        };
       }
     })
   ],
@@ -89,5 +66,4 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
-  debug: process.env.NODE_ENV === "development",
 };
