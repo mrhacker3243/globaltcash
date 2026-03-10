@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 
 // Modular Paths
 import { showUserDashboard } from "./pages/user/dashboard";
-import { showFinancePage } from "./pages/user/finance";
+import { showFinancePage, showMethodDetails } from "./pages/user/finance"; // Added showMethodDetails
 import { showSettingsPage } from "./pages/user/settings";
 import { showTeamPage } from "./pages/user/team";
 import { showAdminDashboard } from "./pages/admin/dashboard";
@@ -27,11 +27,16 @@ export async function handleUpdate(body: any) {
 
   const user = await db.user.findUnique({ where: { telegramId: String(chatId) } });
 
-  // 1. DASHBOARD & AUTH MENU
-  if (text === "/start" || data === "show_dash" || data === "show_user_dash") {
+  // 1. START COMMAND & REFERRAL CAPTURE
+  if (text.startsWith("/start") || data === "show_dash" || data === "show_user_dash") {
+    const startPayload = text.split(" ")[1]; // Get ID from /start USER_ID
+
     if (user) {
       return user.role === "ADMIN" ? await showAdminDashboard(chatId, user) : await showUserDashboard(chatId, user);
     } else {
+      // Initialize Registration State with Referrer ID if present
+      (userState as any)[chatId] = { referrerId: startPayload || null };
+      
       const authBtns = {
         inline_keyboard: [
           [{ text: "🔐 Login", callback_data: "auth_login" }, { text: "📝 Register", callback_data: "auth_register" }]
@@ -41,18 +46,31 @@ export async function handleUpdate(body: any) {
     }
   }
 
-  // --- AUTH FLOWS (LOGIN & REGISTRATION) ---
+  // --- AUTH FLOWS ---
   if (data === "auth_login") {
     (userState as any)[chatId] = { step: "waiting_for_email" };
     return await sendTelegram(chatId, "📧 Please enter your *Email*:");
   }
 
   if (data === "auth_register") {
-    (userState as any)[chatId] = { step: "reg_name" };
+    const currentState = (userState as any)[chatId] || {};
+    (userState as any)[chatId] = { ...currentState, step: "reg_name" };
     return await sendTelegram(chatId, "👤 Registration: Enter your *Full Name*:");
   }
 
-  // --- INPUT HANDLING FOR AUTH ---
+  // --- LOGOUT & FORGOT PASSWORD ---
+  if (data === "auth_logout") {
+    delete (userState as any)[chatId];
+    // We also remove the telegramId from DB to truly "logout" that telegram account
+    if (user) await db.user.update({ where: { id: user.id }, data: { telegramId: null } });
+    return await sendTelegram(chatId, "🔴 Logged out! Use /start to login again.");
+  }
+
+  if (data === "auth_forgot_password") {
+    return await sendTelegram(chatId, "🔑 Please contact Admin @YourAdminHandle to reset your password.");
+  }
+
+  // --- INPUT HANDLING FOR AUTH & REGISTRATION ---
   if (text && userState[chatId] && !user) {
     const state = userState[chatId] as any;
 
@@ -61,6 +79,7 @@ export async function handleUpdate(body: any) {
       state.step = "waiting_for_password";
       return await sendTelegram(chatId, "🔑 Enter your *Password*:");
     }
+    
     if (state.step === "waiting_for_password") {
       const loginUser = await db.user.findUnique({ where: { email: state.email } });
       if (loginUser && await bcrypt.compare(text.trim(), loginUser.password)) {
@@ -76,6 +95,7 @@ export async function handleUpdate(body: any) {
       state.step = "reg_email";
       return await sendTelegram(chatId, `Nice to meet you ${state.regName}! Now enter your *Email*:`);
     }
+
     if (state.step === "reg_email") {
       const email = text.trim().toLowerCase();
       const existing = await db.user.findUnique({ where: { email } });
@@ -84,11 +104,22 @@ export async function handleUpdate(body: any) {
       state.step = "reg_pass";
       return await sendTelegram(chatId, "🔐 Create a *Password* (min 6 characters):");
     }
+
     if (state.step === "reg_pass") {
       if (text.length < 6) return await sendTelegram(chatId, "⚠️ Password too short.");
       const hashedPassword = await bcrypt.hash(text.trim(), 10);
+      
+      // Create User with Referral Link
       const newUser = await db.user.create({
-        data: { name: state.regName, email: state.regEmail, password: hashedPassword, telegramId: String(chatId), balance: 0, role: "USER" }
+        data: { 
+          name: state.regName, 
+          email: state.regEmail, 
+          password: hashedPassword, 
+          telegramId: String(chatId), 
+          balance: 0, 
+          role: "USER",
+          referrerId: state.referrerId // Referral attached here!
+        }
       });
       delete userState[chatId];
       return await showUserDashboard(chatId, newUser);
@@ -97,48 +128,29 @@ export async function handleUpdate(body: any) {
 
   // --- LOGGED IN USER ACTIONS ---
   if (user) {
-    // Switch for Page Navigation
     switch (data) {
       case "page_deposit": return await showFinancePage(chatId, user, 'deposit');
       case "page_withdraw": return await showWithdrawPage(chatId, user);
       case "page_plans": return await showPlans(chatId, user);
       case "page_settings": return await showSettingsPage(chatId, user);
       case "page_team": return await showTeamPage(chatId, user);
-      case "admin_page_deposits": if (user.role === "ADMIN") return await showPendingDeposits(chatId); break;
     }
 
-    // Callback Data Handling
     if (data.startsWith("buy_plan_")) return await initiatePlanBuy(chatId, user, data.replace("buy_plan_", ""));
     if (data.startsWith("wit_meth_")) return await initiateWithdraw(chatId, user, data.replace("wit_meth_", ""));
-
-    // Admin Actions (Deposit Approval/Rejection)
-    if (user.role === "ADMIN") {
-      if (data.startsWith("view_dep_")) return await viewPendingDeposit(chatId, data.replace("view_dep_", ""));
-      if (data.startsWith("approve_dep_")) {
-        // ... Admin deposit approval logic (jaise pehle tha)
-      }
-    }
 
     // User Deposit Method Selection
     if (data.startsWith("dep_meth_")) {
       const method = data.split("_")[2];
-      (userState as any)[chatId] = { step: "waiting_for_dep_amount", method };
-      const settings = await db.systemSetting.findUnique({ where: { id: "global" } });
-      let instruction = method === "usdt" ? `💳 *USDT Address:*\n\`${settings?.adminWalletAddress}\`` : `🏦 *Details:*\nNumber: \`${method === 'easypaisa' ? settings?.easyPaisaNumber : settings?.jazzCashNumber}\``;
-      return await sendTelegram(chatId, `${instruction}\n\n💰 *Enter Amount:*`);
+      return await showMethodDetails(chatId, method);
     }
 
     // --- SHARED INPUT HANDLING (TEXT) ---
     if (text && userState[chatId]) {
       const state = userState[chatId] as any;
-      
-      // Plans Investment
       if (state.step === "waiting_for_invest_amount") return await processInvestment(chatId, user, parseFloat(text));
+      if (state.step?.startsWith("waiting_for_wit_")) return await processWithdrawRequest(chatId, user, text);
       
-      // Withdrawal Process
-      if (state.step.startsWith("waiting_for_wit_")) return await processWithdrawRequest(chatId, user, text);
-      
-      // Deposit Process
       if (state.step === "waiting_for_dep_amount") {
         state.amount = parseFloat(text);
         state.step = "waiting_for_dep_slip";
@@ -150,7 +162,13 @@ export async function handleUpdate(body: any) {
     if (photo && (userState[chatId] as any)?.step === "waiting_for_dep_slip") {
       const state = userState[chatId] as any;
       await db.deposit.create({
-        data: { userId: user.id, amount: state.amount, gateway: state.method.toUpperCase(), slipImage: photo[photo.length - 1].file_id, status: "PENDING" }
+        data: { 
+          userId: user.id, 
+          amount: state.amount, 
+          gateway: state.method?.toUpperCase() || "UNKNOWN", 
+          slipImage: photo[photo.length - 1].file_id, 
+          status: "PENDING" 
+        }
       });
       delete userState[chatId];
       return await sendTelegram(chatId, "✅ *Slip submitted!* Verification pending.");
