@@ -1,14 +1,32 @@
-const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
+export async function sendTelegram(chatId: number, text: string, replyMarkup?: any) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const url = `https://api.telegram.org/bot${token}/sendMessage`;
 
-export async function sendTelegram(chatId: number, text: string, replyMarkup: any = null) {
-  const body: any = { chat_id: chatId, text, parse_mode: "Markdown" };
-  if (replyMarkup) body.reply_markup = replyMarkup;
-  try {
-    await fetch(`${TELEGRAM_API}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-  } catch (err) { console.error("TG Error:", err); }
+  return await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: text,
+      reply_markup: replyMarkup,
+      parse_mode: "Markdown",
+    }),
+  });
+}
+
+export async function sendTelegramPhoto(chatId: number, photo: string, caption?: string, replyMarkup?: any) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const url = `https://api.telegram.org/bot${token}/sendPhoto`;
+
+  return await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      photo: photo,
+      caption: caption,
+      reply_markup: replyMarkup,
+      parse_mode: "Markdown",
+    }),
+  });
 }

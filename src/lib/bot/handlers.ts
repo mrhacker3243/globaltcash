@@ -3,118 +3,128 @@ import { sendTelegram } from "./utils";
 import { userState } from "./states";
 import bcrypt from "bcryptjs";
 
-// Naye Modular Paths (User folder)
+// Modular Paths
 import { showUserDashboard } from "./pages/user/dashboard";
 import { showFinancePage } from "./pages/user/finance";
 import { showSettingsPage } from "./pages/user/settings";
 import { showTeamPage } from "./pages/user/team";
-
-// Naye Modular Paths (Admin folder)
 import { showAdminDashboard } from "./pages/admin/dashboard";
-import { showPendingDeposits } from "./pages/admin/deposits"; // <--- Add this
+import { showPendingDeposits, viewPendingDeposit } from "./pages/admin/deposits";
 
 export async function handleUpdate(body: any) {
   const msg = body.message;
   const cb = body.callback_query;
-  
   const chatId = msg ? msg.chat.id : cb?.message?.chat?.id;
   const text = msg?.text || "";
-  const data = cb?.data || ""; 
+  const data = cb?.data || "";
+  const photo = msg?.photo;
 
   if (!chatId) return;
 
-  // 1. Database Priority Check
-  const user = await db.user.findUnique({ 
-    where: { telegramId: String(chatId) } 
-  });
+  const user = await db.user.findUnique({ where: { telegramId: String(chatId) } });
 
-  // 2. Start & Dashboard Redirect Logic
+  // 1. Start & Dashboard Redirect
   if (text === "/start" || data === "show_dash") {
     if (user) {
-      if (user.role === "ADMIN") {
-        return await showAdminDashboard(chatId, user);
-      } else {
-        return await showUserDashboard(chatId, user);
-      }
+      return user.role === "ADMIN" ? await showAdminDashboard(chatId, user) : await showUserDashboard(chatId, user);
     } else if (text === "/start") {
       const langBtns = {
-        inline_keyboard: [
-          [{ text: "English 🇺🇸", callback_data: "setlang_en" }, { text: "اردو 🇵🇰", callback_data: "setlang_ur" }],
-          [{ text: "हिन्दी 🇮🇳", callback_data: "setlang_hi" }, { text: "العربية 🇸🇦", callback_data: "setlang_ar" }]
-        ]
+        inline_keyboard: [[{ text: "English 🇺🇸", callback_data: "setlang_en" }, { text: "اردو 🇵🇰", callback_data: "setlang_ur" }]]
       };
-      await sendTelegram(chatId, "Welcome to Global Trust Cash! Please select your language to Login:", langBtns);
-      return;
+      return await sendTelegram(chatId, "Welcome to GTC! Select language to Login:", langBtns);
     }
   }
 
-  // 3. Navigation Logic for Logged-In Users
+  // 2. Logged-in User Logic
   if (user) {
     if (data === "show_user_dash") return await showUserDashboard(chatId, user);
 
     switch (data) {
-      // User Pages
-      case "page_deposit": await showFinancePage(chatId, user, 'deposit'); break;
-      case "page_withdraw": await showFinancePage(chatId, user, 'withdraw'); break;
-      case "page_settings": await showSettingsPage(chatId, user); break;
-      case "page_team": await showTeamPage(chatId, user); break;
-      
-      // Admin specific callback handlers
-      case "admin_page_deposits":
-        if (user.role === "ADMIN") {
-          return await showPendingDeposits(chatId); // <--- Ab ye functional hai
-        }
-        break;
-      case "admin_page_users":
-        if (user.role === "ADMIN") await sendTelegram(chatId, "👥 Loading user management...");
-        break;
+      case "page_deposit": return await showFinancePage(chatId, user, 'deposit');
+      case "page_withdraw": return await showFinancePage(chatId, user, 'withdraw');
+      case "page_settings": return await showSettingsPage(chatId, user);
+      case "page_team": return await showTeamPage(chatId, user);
+      case "admin_page_deposits": if (user.role === "ADMIN") return await showPendingDeposits(chatId); break;
     }
-    return;
+
+    // --- ADMIN ACTIONS ---
+    if (user.role === "ADMIN") {
+      if (data.startsWith("view_dep_")) return await viewPendingDeposit(chatId, data.replace("view_dep_", ""));
+
+      if (data.startsWith("approve_dep_")) {
+        const depId = data.replace("approve_dep_", "");
+        const result = await db.$transaction(async (tx) => {
+          const dep = await tx.deposit.findUnique({ where: { id: depId }, include: { user: true } });
+          if (!dep || dep.status !== ("PENDING" as any)) throw new Error("Processed");
+          await tx.deposit.update({ where: { id: depId }, data: { status: "COMPLETED" as any } });
+          return await tx.user.update({ where: { id: dep.userId }, data: { balance: { increment: dep.amount } } });
+        });
+        await sendTelegram(chatId, `✅ Approved! Balance added to ${result.name}.`);
+        await sendTelegram(Number(result.telegramId), `🎉 Your deposit has been *Approved*!`);
+        return await showPendingDeposits(chatId);
+      }
+      
+      if (data.startsWith("reject_dep_")) {
+        await db.deposit.update({ where: { id: data.replace("reject_dep_", "") }, data: { status: "REJECTED" as any } });
+        await sendTelegram(chatId, "❌ Deposit Rejected.");
+        return await showPendingDeposits(chatId);
+      }
+    }
+
+    // --- USER FLOWS ---
+    if (data.startsWith("dep_meth_")) {
+      const method = data.split("_")[2];
+      (userState as any)[chatId] = { step: "waiting_for_dep_amount", method };
+      return await sendTelegram(chatId, `💰 Enter Amount for ${method.toUpperCase()}:`);
+    }
+
+    if (text && userState[chatId]) {
+      const state = userState[chatId] as any;
+      if (state.step === "waiting_for_dep_amount") {
+        state.amount = parseFloat(text);
+        state.step = "waiting_for_dep_slip";
+        return await sendTelegram(chatId, "📸 Upload Screenshot:");
+      }
+    }
+
+    if (photo && (userState[chatId] as any)?.step === "waiting_for_dep_slip") {
+      const state = userState[chatId] as any;
+      await db.deposit.create({
+        data: {
+          userId: user.id,
+          amount: state.amount!,
+          receiptUrl: photo[photo.length - 1].file_id,
+          status: "PENDING" as any
+        } as any
+      });
+      delete userState[chatId];
+      return await sendTelegram(chatId, "✅ Slip sent for verification!");
+    }
   }
 
-  // 4. Login Flow (Same as before)
+  // 3. Login Flow
   if (data.startsWith("setlang_")) {
-    const selectedLang = data.split("_")[1];
-    userState[chatId] = { step: "waiting_for_email", lang: selectedLang };
-    await sendTelegram(chatId, "📧 Please send your registered *Email Address*:");
-    return;
+    (userState as any)[chatId] = { step: "waiting_for_email", lang: data.split("_")[1] };
+    return await sendTelegram(chatId, "📧 Send Email:");
   }
 
   if (text && userState[chatId]) {
-    const state = userState[chatId];
+    const state = userState[chatId] as any;
     if (state.step === "waiting_for_email") {
-      userState[chatId].email = text.trim().toLowerCase();
-      userState[chatId].step = "waiting_for_password";
-      await sendTelegram(chatId, "🔑 Correct! Now enter your *Password*:");
-      return;
+      state.email = text.trim().toLowerCase();
+      state.step = "waiting_for_password";
+      return await sendTelegram(chatId, "🔑 Enter Password:");
     }
-
     if (state.step === "waiting_for_password") {
-      const email = state.email!;
-      const loginUser = await db.user.findUnique({ where: { email } });
-
-      if (!loginUser) {
-        await sendTelegram(chatId, "❌ User not found. Type /start to retry.");
+      const loginUser = await db.user.findUnique({ where: { email: state.email } });
+      if (loginUser && await bcrypt.compare(text.trim(), loginUser.password)) {
+        await db.user.update({ where: { id: loginUser.id }, data: { telegramId: String(chatId) } });
         delete userState[chatId];
-        return;
+        const updated = await db.user.findUnique({ where: { id: loginUser.id } });
+        return updated?.role === "ADMIN" ? await showAdminDashboard(chatId, updated) : await showUserDashboard(chatId, updated!);
       }
-
-      const isValid = await bcrypt.compare(text.trim(), loginUser.password);
-      if (isValid) {
-        const updatedUser = await db.user.update({
-          where: { email },
-          data: { telegramId: String(chatId) }
-        });
-        delete userState[chatId];
-        await sendTelegram(chatId, "✅ Login Successful!");
-        return updatedUser.role === "ADMIN" 
-          ? await showAdminDashboard(chatId, updatedUser) 
-          : await showUserDashboard(chatId, updatedUser);
-      } else {
-        await sendTelegram(chatId, "❌ Incorrect Password. Type /start to try again.");
-        delete userState[chatId];
-        return;
-      }
+      delete userState[chatId];
+      return await sendTelegram(chatId, "❌ Invalid credentials.");
     }
   }
 }
