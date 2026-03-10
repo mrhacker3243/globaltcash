@@ -1,12 +1,17 @@
 import { db } from "@/lib/db";
 import { sendTelegram } from "./utils";
-import { showUserDashboard } from "./pages/dashboard"; // User View
-import { showAdminDashboard } from "./pages/admin_dashboard"; // Admin View
-import { showFinancePage } from "./pages/finance";
-import { showSettingsPage } from "./pages/settings";
-import { showTeamPage } from "./pages/team";
 import { userState } from "./states";
 import bcrypt from "bcryptjs";
+
+// Naye Modular Paths (User folder)
+import { showUserDashboard } from "./pages/user/dashboard";
+import { showFinancePage } from "./pages/user/finance";
+import { showSettingsPage } from "./pages/user/settings";
+import { showTeamPage } from "./pages/user/team";
+
+// Naye Modular Paths (Admin folder)
+import { showAdminDashboard } from "./pages/admin/dashboard";
+import { showPendingDeposits } from "./pages/admin/deposits"; // <--- Add this
 
 export async function handleUpdate(body: any) {
   const msg = body.message;
@@ -26,7 +31,6 @@ export async function handleUpdate(body: any) {
   // 2. Start & Dashboard Redirect Logic
   if (text === "/start" || data === "show_dash") {
     if (user) {
-      // Role-based separation
       if (user.role === "ADMIN") {
         return await showAdminDashboard(chatId, user);
       } else {
@@ -46,7 +50,6 @@ export async function handleUpdate(body: any) {
 
   // 3. Navigation Logic for Logged-In Users
   if (user) {
-    // Admin personal choice: If admin wants to see user dashboard view
     if (data === "show_user_dash") return await showUserDashboard(chatId, user);
 
     switch (data) {
@@ -57,21 +60,19 @@ export async function handleUpdate(body: any) {
       case "page_team": await showTeamPage(chatId, user); break;
       
       // Admin specific callback handlers
-      case "admin_deposits":
-        if (user.role === "ADMIN") await sendTelegram(chatId, "🔍 Fetching all pending deposits from database...");
+      case "admin_page_deposits":
+        if (user.role === "ADMIN") {
+          return await showPendingDeposits(chatId); // <--- Ab ye functional hai
+        }
         break;
-      case "admin_users":
-        if (user.role === "ADMIN") await sendTelegram(chatId, "👥 Loading user management system...");
-        break;
-      case "admin_stats":
-        if (user.role === "ADMIN") await sendTelegram(chatId, "📊 Calculating platform total investment & volume...");
+      case "admin_page_users":
+        if (user.role === "ADMIN") await sendTelegram(chatId, "👥 Loading user management...");
         break;
     }
     return;
   }
 
-  // 4. Login Flow (Only for non-registered users)
-  
+  // 4. Login Flow (Same as before)
   if (data.startsWith("setlang_")) {
     const selectedLang = data.split("_")[1];
     userState[chatId] = { step: "waiting_for_email", lang: selectedLang };
@@ -81,7 +82,6 @@ export async function handleUpdate(body: any) {
 
   if (text && userState[chatId]) {
     const state = userState[chatId];
-
     if (state.step === "waiting_for_email") {
       userState[chatId].email = text.trim().toLowerCase();
       userState[chatId].step = "waiting_for_password";
@@ -100,22 +100,16 @@ export async function handleUpdate(body: any) {
       }
 
       const isValid = await bcrypt.compare(text.trim(), loginUser.password);
-
       if (isValid) {
         const updatedUser = await db.user.update({
           where: { email },
           data: { telegramId: String(chatId) }
         });
-
         delete userState[chatId];
         await sendTelegram(chatId, "✅ Login Successful!");
-        
-        // Redirect based on role right after login
-        if (updatedUser.role === "ADMIN") {
-            return await showAdminDashboard(chatId, updatedUser);
-        } else {
-            return await showUserDashboard(chatId, updatedUser);
-        }
+        return updatedUser.role === "ADMIN" 
+          ? await showAdminDashboard(chatId, updatedUser) 
+          : await showUserDashboard(chatId, updatedUser);
       } else {
         await sendTelegram(chatId, "❌ Incorrect Password. Type /start to try again.");
         delete userState[chatId];

@@ -1,20 +1,19 @@
-import { sendTelegram } from "../utils";
-import { translations } from "../translations";
+import { sendTelegram } from "../../utils";
+import { translations } from "../../translations";
 
 export async function showUserDashboard(chatId: number, user: any) {
   const t = translations[user.lang || 'en'];
   const refLink = `https://globaltcash.up.railway.app/register?ref=${user.id}`;
   
-  const welcomeMsg = `👋 *${t.welcome_back} ${user.name}!*\n\n` +
+  const welcomeMsg = `👋 *${t.welcome_back}, ${user.name}!*\n\n` +
                      `💰 *Balance:* ${user.balance || 0} PKR\n` +
-                     `👥 *Referrals:* ${user.referralCount || 0}\n` +
                      `🏆 *Rank:* ${user.rankLevel || 'Starter'}\n\n` +
                      `📢 *Referral Link:*\n\`${refLink}\``;
 
   const buttons = {
     inline_keyboard: [
       [{ text: "💳 Deposit", callback_data: "page_deposit" }, { text: "💸 Withdraw", callback_data: "page_withdraw" }],
-      [{ text: "📊 Team", callback_data: "page_team" }, { text: "⚙️ Settings", callback_data: "page_settings" }]
+      [{ text: "📊 My Team", callback_data: "page_team" }, { text: "⚙️ Settings", callback_data: "page_settings" }]
     ]
   };
 
