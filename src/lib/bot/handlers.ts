@@ -9,7 +9,8 @@ import { showFinancePage, showMethodDetails } from "./pages/user/finance";
 import { showSettingsPage } from "./pages/user/settings";
 import { showTeamPage } from "./pages/user/team";
 import { showAdminDashboard } from "./pages/admin/dashboard";
-import { showPendingDeposits, viewPendingDeposit } from "./pages/admin/deposits";
+// Added handleDepositApproval import here
+import { showPendingDeposits, viewPendingDeposit, handleDepositApproval } from "./pages/admin/deposits";
 
 // New Modular Paths for Plans & Withdrawals
 import { showPlans, initiatePlanBuy, processInvestment } from "./pages/user/plans";
@@ -79,27 +80,37 @@ export async function handleUpdate(body: any) {
       }
       return await sendTelegram(chatId, "❌ Invalid credentials.");
     }
-    // ... (reg_name, reg_email, reg_pass logic remain same as your previous version)
   }
 
   // --- LOGGED IN USER ACTIONS ---
   if (user) {
     // Buttons Handling
     if (data) {
+        // Shared & User Pages
         switch (data) {
             case "page_deposit": return await showFinancePage(chatId, user, 'deposit');
             case "page_withdraw": return await showWithdrawPage(chatId, user);
             case "page_plans": return await showPlans(chatId, user);
             case "page_settings": return await showSettingsPage(chatId, user);
             case "page_team": return await showTeamPage(chatId, user);
+            // ADMIN DASHBOARD BUTTONS
+            case "admin_pending_deposits": return await showPendingDeposits(chatId);
         }
 
         if (data.startsWith("buy_plan_")) return await initiatePlanBuy(chatId, user, data.replace("buy_plan_", ""));
         if (data.startsWith("wit_meth_")) return await initiateWithdraw(chatId, user, data.replace("wit_meth_", ""));
+        
         if (data.startsWith("dep_meth_")) {
             const method = data.split("_")[2];
-            (userState as any)[chatId] = { step: "waiting_for_dep_amount", method }; // Set state here!
+            (userState as any)[chatId] = { step: "waiting_for_dep_amount", method };
             return await showMethodDetails(chatId, method);
+        }
+
+        // --- ADMIN SPECIFIC CALLBACKS ---
+        if (user.role === "ADMIN") {
+            if (data.startsWith("view_dep_")) return await viewPendingDeposit(chatId, data.replace("view_dep_", ""));
+            if (data.startsWith("approve_dep_")) return await handleDepositApproval(chatId, data.replace("approve_dep_", ""), "APPROVED");
+            if (data.startsWith("reject_dep_")) return await handleDepositApproval(chatId, data.replace("reject_dep_", ""), "REJECTED");
         }
     }
 
@@ -107,7 +118,6 @@ export async function handleUpdate(body: any) {
     if (text && userState[chatId]) {
       const state = userState[chatId] as any;
       
-      // DEPOSIT: No balance check needed
       if (state.step === "waiting_for_dep_amount") {
         const amount = parseFloat(text);
         if (isNaN(amount) || amount <= 0) return await sendTelegram(chatId, "⚠️ Enter a valid amount.");
@@ -116,12 +126,10 @@ export async function handleUpdate(body: any) {
         return await sendTelegram(chatId, "📸 *Upload Payment Slip (Screenshot):*");
       }
 
-      // INVESTMENT: Balance check is inside processInvestment
       if (state.step === "waiting_for_invest_amount") {
         return await processInvestment(chatId, user, parseFloat(text));
       }
 
-      // WITHDRAW: Logic inside processWithdrawRequest
       if (state.step?.startsWith("waiting_for_wit_")) {
         return await processWithdrawRequest(chatId, user, text);
       }

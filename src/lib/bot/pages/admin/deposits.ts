@@ -3,8 +3,9 @@ import { sendTelegram, sendTelegramPhoto } from "../../utils";
 
 export async function showPendingDeposits(chatId: number) {
   const pendingDeposits = await db.deposit.findMany({
-    where: { status: "PENDING" }, // Matches DepositStatus Enum
+    where: { status: "PENDING" },
     include: { user: true },
+    orderBy: { createdAt: "desc" },
     take: 10
   });
 
@@ -44,14 +45,45 @@ export async function viewPendingDeposit(chatId: number, depositId: string) {
         { text: "✅ Approve", callback_data: `approve_dep_${dep.id}` },
         { text: "❌ Reject", callback_data: `reject_dep_${dep.id}` }
       ],
-      [{ text: "🔙 Back to List", callback_data: "admin_page_deposits" }]
+      [{ text: "🔙 Back to List", callback_data: "admin_pending_deposits" }]
     ]
   };
 
-  // Check if slipImage exists (Telegram File ID)
   if (dep.slipImage) {
     await sendTelegramPhoto(chatId, dep.slipImage, msg, buttons);
   } else {
     await sendTelegram(chatId, msg + "\n\n⚠️ No slip image found.", buttons);
   }
+}
+
+export async function handleDepositApproval(adminChatId: number, depositId: string, action: "APPROVED" | "REJECTED") {
+  const deposit = await db.deposit.findUnique({
+    where: { id: depositId },
+    include: { user: true }
+  });
+
+  if (!deposit) return await sendTelegram(adminChatId, "❌ Deposit not found.");
+  if (deposit.status !== "PENDING") return await sendTelegram(adminChatId, "⚠️ Processed already.");
+
+  if (action === "APPROVED") {
+    await db.$transaction([
+      db.deposit.update({ where: { id: depositId }, data: { status: "ACTIVE" } }),
+      db.user.update({
+        where: { id: deposit.userId },
+        data: { balance: { increment: deposit.amount }, totalDeposit: { increment: deposit.amount } }
+      })
+    ]);
+
+    if (deposit.user.telegramId) {
+      await sendTelegram(Number(deposit.user.telegramId), `✅ *Deposit Success!*\nAapka *${deposit.amount} PKR* deposit approve ho gaya hy.`);
+    }
+    await sendTelegram(adminChatId, "✅ Approved!");
+  } else {
+    await db.deposit.update({ where: { id: depositId }, data: { status: "REJECTED" } });
+    if (deposit.user.telegramId) {
+      await sendTelegram(Number(deposit.user.telegramId), `❌ *Deposit Rejected!*`);
+    }
+    await sendTelegram(adminChatId, "❌ Rejected.");
+  }
+  return await showPendingDeposits(adminChatId);
 }
