@@ -8,7 +8,7 @@ datasource db {
 }
 
 // ──────────────────────────────────────────────
-// Enums first (they must be defined before being used)
+// Enums
 // ──────────────────────────────────────────────
 
 enum Role {
@@ -31,7 +31,7 @@ enum DepositStatus {
 }
 
 // ──────────────────────────────────────────────
-// Models – order matters: referenced models first
+// Models
 // ──────────────────────────────────────────────
 
 model Deposit {
@@ -51,28 +51,28 @@ model Deposit {
 
   user            User          @relation(fields: [userId], references: [id])
   profitRecords   ProfitRecord[]
-  referralCommissions Referral[]   // ← reverse relation for Referral → Deposit
+  referralCommissions Referral[]   
 }
 
 model Withdrawal {
-  id        String   @id @default(cuid())
-  amount    Float
-  address   String
-  status    Status   @default(PENDING)
-  userId    String
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  amount     Float
+  address    String
+  status     Status   @default(PENDING)
+  userId     String
+  createdAt  DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
 }
 
 model ProfitRecord {
-  id        String   @id @default(cuid())
-  depositId String
-  amount    Float
-  status    String   @default("PENDING")
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  depositId  String
+  amount     Float
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now())
 
-  deposit   Deposit  @relation(fields: [depositId], references: [id])
+  deposit    Deposit  @relation(fields: [depositId], references: [id])
 }
 
 model ClaimedReward {
@@ -87,75 +87,73 @@ model ClaimedReward {
   reward     Reward   @relation(fields: [rewardId], references: [id])
 }
 
-// ──────────────────────────────────────────────
-
 model User {
-  id                 String         @id @default(cuid())
-  email              String         @unique
+  id                 String          @id @default(cuid())
+  email              String          @unique
   password           String
-  role               Role           @default(USER)
-  isFrozen           Boolean        @default(false)
-  balance            Float          @default(0.0)
-  createdAt          DateTime       @default(now())
+  telegramId         String?         @unique 
+  role               Role            @default(USER)
+  isFrozen           Boolean         @default(false)
+  balance            Float           @default(0.0)
+  createdAt          DateTime        @default(now())
   name               String?
   walletAddress      String?
   twoFactorSecret    String?
-  isTwoFactorEnabled Boolean        @default(false)
+  isTwoFactorEnabled Boolean         @default(false)
   referrerId         String?
-  totalDeposit       Float          @default(0.0)
-  referralCount      Int            @default(0)
-  rankLevel          String         @default("Starter")
-  milestoneProgress  Int            @default(0)
+  totalDeposit       Float           @default(0.0)
+  referralCount      Int             @default(0)
+  rankLevel          String          @default("Starter")
+  milestoneProgress  Int             @default(0)
   ipAddress          String?
   deviceFingerprint  String?
-
-  referralEarnings   Float          @default(0.0)
+  referralEarnings   Float           @default(0.0)
 
   deposits           Deposit[]
-  referrer           User?          @relation("UserReferrals", fields: [referrerId], references: [id])
-  referredUsers      User[]         @relation("UserReferrals")
+  referrer           User?           @relation("UserReferrals", fields: [referrerId], references: [id])
+  referredUsers      User[]          @relation("UserReferrals")
   withdrawals        Withdrawal[]
-  referrerReferrals  Referral[]     @relation("ReferrerReferrals")
-  refereeReferrals   Referral[]     @relation("RefereeReferrals")
+  referrerReferrals  Referral[]      @relation("ReferrerReferrals")
+  refereeReferrals   Referral[]      @relation("RefereeReferrals")
   claimedRewards     ClaimedReward[]
 }
 
 model SystemSetting {
-  id                String   @id @default("global")
+  id                 String   @id @default("global")
   adminWalletAddress String?  @default("0x742d35Cc6634C0532925a3b844Bc454e4438f44e")
-  tonWalletAddress  String?
-  jazzCashNumber    String?  @default("03001234567")
-  jazzCashName      String?  @default("Faham Khan")
-  easyPaisaNumber   String?  @default("03459876543")
-  easyPaisaName     String?  @default("Faham Khan")
-  maintenanceMode   Boolean  @default(false)
-  updatedAt         DateTime @updatedAt
+  tonWalletAddress   String?
+  jazzCashNumber     String?  @default("03001234567")
+  jazzCashName       String?  @default("Faham Khan")
+  easyPaisaNumber    String?  @default("03459876543")
+  easyPaisaName      String?  @default("Faham Khan")
+  maintenanceMode    Boolean  @default(false)
+  updatedAt          DateTime @updatedAt
 }
 
 model Plan {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  minAmount Float
-  maxAmount Float
-  roi       Float
-  duration  String
-  icon      String?  @default("Zap")
-  popular   Boolean  @default(false)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  name       String   @unique
+  minAmount  Float
+  maxAmount  Float
+  roi        Float
+  duration   String
+  icon       String?  @default("Zap")
+  popular    Boolean  @default(false)
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Reward {
-  id             String          @id @default(cuid())
-  title          String
-  description    String
-  targetSales    Int
-  prizeAmount    Float
-  prizeType      String          @default("cash")
-  active         Boolean         @default(true)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id              String          @id @default(cuid())
+  title           String
+  description     String
+  targetSales     Int
+  prizeAmount     Float
+  prizeType       String          @default("cash")
+  active          Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   claimedRewards ClaimedReward[]
 }
@@ -179,7 +177,6 @@ model Referral {
   status            String    @default("PENDING")
   depositId         String?
   approvedAt        DateTime?
-
   ipAddress         String?
   deviceFingerprint String?
   createdAt         DateTime  @default(now())

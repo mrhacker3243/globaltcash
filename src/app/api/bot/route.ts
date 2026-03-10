@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-// Aapki db.ts file se 'db' import kar rahe hain
 import { db } from "@/lib/db"; 
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -17,13 +16,14 @@ export async function POST(req: Request) {
     const text = body.message.text.toLowerCase();
     const firstName = body.message.from.first_name || "User";
 
+    // 1. Start Command
     if (text === "/start") {
-      const welcomeMsg = `Assalam-o-Alaikum ${firstName}!\n\nWelcome to *Global Trust Cash* Bot. 💰\n\nCommands:\n/stats - Check Platform Stats\n/site - Get Website Link`;
+      const welcomeMsg = `Assalam-o-Alaikum ${firstName}!\n\nWelcome to *Global Trust Cash* Bot. 💰\n\nCommands:\n/login <email> - Link your account\n/balance - Check your balance\n/stats - Platform Stats\n/site - Website Link`;
       await sendTelegram(chatId, welcomeMsg);
     } 
 
+    // 2. Platform Stats
     else if (text === "/stats") {
-      // 'db' variable use kar rahe hain jo aapki file se aa raha hai
       const [userCount, pendingDeposits] = await Promise.all([
         db.user.count(),
         db.deposit.count({ where: { status: "PENDING" } })
@@ -37,6 +37,45 @@ export async function POST(req: Request) {
       await sendTelegram(chatId, statsMsg);
     }
 
+    // 3. Login Logic
+    else if (text.startsWith("/login")) {
+      const email = text.split(" ")[1];
+
+      if (!email) {
+        await sendTelegram(chatId, "❌ Please provide your email.\nExample: `/login user@email.com` ");
+      } else {
+        const user = await db.user.findUnique({ where: { email: email } });
+
+        if (!user) {
+          await sendTelegram(chatId, "❌ Is email se koi account nahi mila.");
+        } else {
+          await db.user.update({
+            where: { email: email },
+            data: { telegramId: chatId.toString() }
+          });
+          await sendTelegram(chatId, `✅ Welcome, *${user.name || "Investor"}*!\n\nAapka account link ho gaya hai. Ab aap /balance check kar sakte hain.`);
+        }
+      }
+    }
+
+    // 4. Personal Balance
+    else if (text === "/balance") {
+      const user = await db.user.findUnique({ 
+        where: { telegramId: chatId.toString() } 
+      });
+
+      if (!user) {
+        await sendTelegram(chatId, "⚠️ Pehle login karein: `/login your@email.com` ");
+      } else {
+        await sendTelegram(chatId, `💰 *Your Balance*\n\nAvailable: ${user.balance || 0} PKR\nTotal Earnings: ${user.totalEarnings || 0} PKR`);
+      }
+    }
+
+    // 5. Website Link
+    else if (text === "/site") {
+      await sendTelegram(chatId, "🌐 Official Website: https://globaltcash.up.railway.app/");
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Bot Route Error:", error);
@@ -47,7 +86,6 @@ export async function POST(req: Request) {
 async function sendTelegram(chatId: number, text: string) {
   try {
     if (!TELEGRAM_TOKEN) return;
-    
     await fetch(`${TELEGRAM_API}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
