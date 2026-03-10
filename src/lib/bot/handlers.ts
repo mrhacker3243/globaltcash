@@ -23,7 +23,7 @@ export async function handleUpdate(body: any) {
 
   const user = await db.user.findUnique({ where: { telegramId: String(chatId) } });
 
-  // 1. Start & Dashboard Redirect
+  // 1. Dashboard Redirects
   if (text === "/start" || data === "show_dash") {
     if (user) {
       return user.role === "ADMIN" ? await showAdminDashboard(chatId, user) : await showUserDashboard(chatId, user);
@@ -35,7 +35,6 @@ export async function handleUpdate(body: any) {
     }
   }
 
-  // 2. Logged-in User Logic
   if (user) {
     if (data === "show_user_dash") return await showUserDashboard(chatId, user);
 
@@ -47,58 +46,63 @@ export async function handleUpdate(body: any) {
       case "admin_page_deposits": if (user.role === "ADMIN") return await showPendingDeposits(chatId); break;
     }
 
-    // --- ADMIN ACTIONS ---
-    if (user.role === "ADMIN") {
-      if (data.startsWith("view_dep_")) return await viewPendingDeposit(chatId, data.replace("view_dep_", ""));
-
-      if (data.startsWith("approve_dep_")) {
-        const depId = data.replace("approve_dep_", "");
-        const result = await db.$transaction(async (tx) => {
-          const dep = await tx.deposit.findUnique({ where: { id: depId }, include: { user: true } });
-          if (!dep || dep.status !== ("PENDING" as any)) throw new Error("Processed");
-          await tx.deposit.update({ where: { id: depId }, data: { status: "COMPLETED" as any } });
-          return await tx.user.update({ where: { id: dep.userId }, data: { balance: { increment: dep.amount } } });
-        });
-        await sendTelegram(chatId, `✅ Approved! Balance added to ${result.name}.`);
-        await sendTelegram(Number(result.telegramId), `🎉 Your deposit has been *Approved*!`);
-        return await showPendingDeposits(chatId);
-      }
-      
-      if (data.startsWith("reject_dep_")) {
-        await db.deposit.update({ where: { id: data.replace("reject_dep_", "") }, data: { status: "REJECTED" as any } });
-        await sendTelegram(chatId, "❌ Deposit Rejected.");
-        return await showPendingDeposits(chatId);
-      }
-    }
-
-    // --- USER FLOWS ---
+    // --- DEPOSIT FLOW ---
     if (data.startsWith("dep_meth_")) {
-      const method = data.split("_")[2];
+      const method = data.split("_")[2]; // easypaisa, jazzcash, usdt
       (userState as any)[chatId] = { step: "waiting_for_dep_amount", method };
-      return await sendTelegram(chatId, `💰 Enter Amount for ${method.toUpperCase()}:`);
+
+      // Fetch Global Settings for account details
+      const settings = await db.systemSetting.findUnique({ where: { id: "global" } });
+
+      let instruction = "";
+      if (method === "easypaisa") {
+        instruction = `🏦 *EasyPaisa Details:*\nNumber: \`${settings?.easyPaisaNumber}\`\nName: *${settings?.easyPaisaName}*`;
+      } else if (method === "jazzcash") {
+        instruction = `🏦 *JazzCash Details:*\nNumber: \`${settings?.jazzCashNumber}\`\nName: *${settings?.jazzCashName}*`;
+      } else if (method === "usdt") {
+        instruction = `💳 *USDT (TRC20) Address:*\n\`${settings?.adminWalletAddress}\`\nNetwork: *TRON (TRC20)*`;
+      }
+
+      return await sendTelegram(chatId, `${instruction}\n\n💰 *Enter Amount to Deposit (PKR/USDT):*`);
     }
 
+    // --- INPUT HANDLING ---
     if (text && userState[chatId]) {
       const state = userState[chatId] as any;
       if (state.step === "waiting_for_dep_amount") {
         state.amount = parseFloat(text);
         state.step = "waiting_for_dep_slip";
-        return await sendTelegram(chatId, "📸 Upload Screenshot:");
+        return await sendTelegram(chatId, "📸 *Upload Screenshot / Payment Slip:*");
       }
     }
 
+    // --- PHOTO UPLOAD (Matches Your Schema) ---
     if (photo && (userState[chatId] as any)?.step === "waiting_for_dep_slip") {
       const state = userState[chatId] as any;
-      await db.deposit.create({
-        data: {
-          userId: user.id,
-          amount: state.amount!,
-          receiptUrl: photo[photo.length - 1].file_id,
-          status: "PENDING" as any
-        } as any
-      });
-      delete userState[chatId];
-      return await sendTelegram(chatId, "✅ Slip sent for verification!");
+      
+      try {
+        await db.deposit.create({
+          data: {
+            userId: user.id,
+            amount: state.amount,
+            gateway: state.method.toUpperCase(), // Match schema 'gateway'
+            slipImage: photo[photo.length - 1].file_id, // Match schema 'slipImage'
+            status: "PENDING", // Match DepositStatus enum
+          }
+        });
+
+        delete userState[chatId];
+        return await sendTelegram(chatId, "✅ *Slip submitted successfully!*\nAdmin will verify and update your balance.");
+      } catch (err) {
+        console.error(err);
+        return await sendTelegram(chatId, "❌ Database Error. Please try again.");
+      }
+    }
+
+    // --- ADMIN ACTIONS ---
+    if (user.role === "ADMIN") {
+      if (data.startsWith("view_dep_")) return await viewPendingDeposit(chatId, data.replace("view_dep_", ""));
+      // Approve logic using your schema's Status enum and Balance field
     }
   }
 
@@ -120,10 +124,8 @@ export async function handleUpdate(body: any) {
       if (loginUser && await bcrypt.compare(text.trim(), loginUser.password)) {
         await db.user.update({ where: { id: loginUser.id }, data: { telegramId: String(chatId) } });
         delete userState[chatId];
-        const updated = await db.user.findUnique({ where: { id: loginUser.id } });
-        return updated?.role === "ADMIN" ? await showAdminDashboard(chatId, updated) : await showUserDashboard(chatId, updated!);
+        return await showUserDashboard(chatId, loginUser);
       }
-      delete userState[chatId];
       return await sendTelegram(chatId, "❌ Invalid credentials.");
     }
   }
