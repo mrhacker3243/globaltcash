@@ -1,5 +1,5 @@
-export const userState: Record<number, { 
-  step: string; 
-  email?: string; 
-  lang: string 
+export const userState: Record<number, {
+  step: string;
+  method?: string;
+  amount?: number;
 }> = {};

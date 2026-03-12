@@ -4,8 +4,8 @@ import { translations } from "../../translations";
 export async function showUserDashboard(chatId: number, user: any) {
   const t = translations[user.lang || 'en'] || translations['en'];
   
-  // Telegram Link - Direct clean link construction
-  const botUsername = "GlobalTrustCashBot"; // Apne bot ka username confirm kar len
+  // FIXED: Correct bot username for the share link
+  const botUsername = "Globaltcashbot"; 
   const refLink = `https://t.me/${botUsername}?start=${user.id}`;
   
   // Share link text construction
@@ -16,10 +16,12 @@ export async function showUserDashboard(chatId: number, user: any) {
                      `💰 *Balance:* ${user.balance.toFixed(2)} PKR\n` +
                      `🏆 *Rank:* ${user.rankLevel || 'Starter'}\n\n` +
                      `📢 *Your Referral Link:*\n\`${refLink}\`\n\n` +
-                     `💡 *Tip:* Is link ko copy karke doston ko send karein. Jab woh join karenge, woh aapki team mein shamil ho jayenge!`;
+                     `🎁 *Note:* Har 24 ghante baad apna Daily Reward claim karna na bhoolein!`;
 
   const buttons = {
     inline_keyboard: [
+      // NEW: Added Daily Reward Claim Button at the top
+      [{ text: "🎁 Claim Daily Reward", callback_data: "claim_daily_roi" }],
       [{ text: "📈 Investment Plans", callback_data: "page_plans" }],
       [
         { text: "💳 Deposit", callback_data: "page_deposit" }, 
